@@ -2,14 +2,18 @@
 hehe
 hehe 2 just cuz
 
+### TODO:
+
+- wallet actions: the agent need to be able to decide when to use the wallet for transfer of assets (how much and to which address), I’ve added functions in wallet_send.py for this, TODO: make the agent decide when/if send transactions from the address
+
+- thinking about replies or subtweets to previous tweets: instead of news, I made the external data to be replies to the agent’s previous tweets and recent mentions of the agent on twitter, this may need yall to change the agent prompt to make it aware how to respond
+
 
 ### basics:
 
 DB folder has scripts to create and seed the database with some fake data. dokcer should automatically run all of this for you.
 
 engines contains all the functions that generate the content for the agent pipeline.
-***You will need to implement post_sender and post_retriever for this to work***
-post_retriever has some code right now for testing purposes but you can delete all of that.
 
 The pipeline.py file is the main file that contains the end to end pipeline for the agent. You can see the flow here.
 
