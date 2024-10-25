@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import secrets
 import hashlib
 from eth_keys import keys
-from tweepy import Client
 from requests_oauthlib import OAuth1
 
 def generate_eth_account():
@@ -75,13 +74,6 @@ def main():
     access_token = os.environ.get('X_ACCESS_TOKEN')
     access_token_secret = os.environ.get('X_ACCESS_TOKEN_SECRET')
 
-    client = Client(
-            consumer_key=consumer_key, 
-            consumer_secret=consumer_secret, 
-            access_token=access_token, 
-            access_token_secret=access_token_secret
-        )
-    
     auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
 
 
@@ -92,7 +84,7 @@ def main():
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
     try:
-        run_pipeline(db, user_id, user_name, client, auth, private_key_hex, **api_keys)
+        run_pipeline(db, user_id, user_name, auth, private_key_hex, **api_keys)
         print("Initial run completed successfully.")
     except Exception as e:
         print(f"Error during initial run: {e}")
@@ -126,7 +118,7 @@ def main():
                 if datetime.now() >= next_run:
                     print(f"Running pipeline at: {datetime.now().strftime('%H:%M:%S')}")
                     try:
-                        run_pipeline(db, user_id, user_name, client, auth, private_key_hex, **api_keys)
+                        run_pipeline(db, user_id, user_name, auth, private_key_hex, **api_keys)
                     except Exception as e:
                         print(f"Error running pipeline: {e}")
 

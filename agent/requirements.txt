@@ -8,6 +8,5 @@ openai
 python-dotenv
 numpy
 tweepy
-dotenv
 eth_keys
 web3

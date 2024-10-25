@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from models import Post
 from sqlalchemy.orm import class_mapper
 
+
 def sqlalchemy_obj_to_dict(obj):
     """Convert a SQLAlchemy object to a dictionary."""
     if obj is None:
@@ -111,7 +112,7 @@ def get_mentions(auth, user_id):
         print(f'Error getting mentions: {response.status_code} - {response.text}')
         return None
 
-def fetch_notification_context(user_id, user_name, auth, tweet_id_list: List[(str, str)]) -> List[str]:
+def fetch_notification_context(user_id, user_name, auth, tweet_id_list) -> List[str]:
     context = []
 
     for (tweet_id, tweet_content) in tweet_id_list:
