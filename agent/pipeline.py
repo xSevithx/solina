@@ -9,7 +9,7 @@ from engines.post_sender import send_post
 from engines.wallet_send import transfer_eth
 from models import Post, User
 
-def run_pipeline(db: Session, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
+def run_pipeline(db: Session, user_id, user_name, client, auth, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
     """
     Run the main pipeline for generating and posting content.
     
@@ -30,7 +30,7 @@ def run_pipeline(db: Session, private_key_hex: str, openrouter_api_key: str, ope
     reply_fetch_list = []
     for e in recent_posts:
         reply_fetch_list.append((e["tweet_id"], e["content"]))
-    notif_context = fetch_notification_context(reply_fetch_list)
+    notif_context = fetch_notification_context(user_id, user_name, auth, reply_fetch_list)
     external_context = notif_context
     
     # Step 3: Generate short-term memory
@@ -68,7 +68,7 @@ def run_pipeline(db: Session, private_key_hex: str, openrouter_api_key: str, ope
         db.commit()
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
-    tweet_id = send_post(new_post_content)
+    tweet_id = send_post(client, new_post_content)
     if tweet_id:
         new_db_post = Post(content=new_post_content, user_id=ai_user.id, type="text", tweet_id=tweet_id)
         db.add(new_db_post)

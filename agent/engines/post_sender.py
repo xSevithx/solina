@@ -1,23 +1,6 @@
-from tweepy import Client, Paginator, TweepyException
-from dotenv import load_dotenv
-import os
-# Load environment variables from a .env file
-load_dotenv()
+from tweepy import Client
 
-# Accessing environment variables
-consumer_key = os.environ.get('X_CONSUMER_KEY')
-consumer_secret = os.environ.get('X_CONSUMER_SECRET')
-access_token = os.environ.get('X_ACCESS_TOKEN')
-access_token_secret = os.environ.get('X_ACCESS_TOKEN_SECRET')
-
-client = Client(
-        consumer_key=consumer_key, 
-        consumer_secret=consumer_secret, 
-        access_token=access_token, 
-        access_token_secret=access_token_secret
-    )
-
-def send_post(content: str) -> str:
+def send_post(client: Client, content: str) -> str:
     """
     Posts a tweet on behalf of the user.
 
