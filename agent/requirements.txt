@@ -7,3 +7,7 @@ requests==2.31.0
 openai
 python-dotenv
 numpy
+tweepy
+dotenv
+eth_keys
+web3

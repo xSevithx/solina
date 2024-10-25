@@ -6,6 +6,31 @@ from db.db_setup import create_database, get_db
 from db.db_seed import seed_database
 from pipeline import run_pipeline
 from dotenv import load_dotenv
+import secrets
+import hashlib
+from eth_keys import keys
+
+def generate_eth_account():
+    # Securely generate a random number to use as a seed
+    random_seed = secrets.token_bytes(32)
+
+    hasher = hashlib.sha256()
+    hasher.update(random_seed)
+    hashed_output = hasher.digest()
+
+    # Generate private key using the hash as a seed
+    private_key = keys.PrivateKey(hashed_output)
+
+    # Correct way to get the hex representation of the private key
+    private_key_hex = private_key.to_hex()
+
+    # Derive the public key
+    public_key = private_key.public_key
+
+    # Derive the Ethereum address
+    eth_address = public_key.to_checksum_address()
+
+    return private_key_hex, eth_address
 
 def get_random_activation_time():
     """Returns a random time within the next 30 minutes"""
@@ -40,10 +65,13 @@ def main():
         # 'news_api_key': os.getenv("NEWS_API_KEY")
     }
 
+    private_key_hex, eth_address = generate_eth_account()
+    print(f"generated agent exclusively-owned wallet: {eth_address}")
+
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
     try:
-        run_pipeline(db, **api_keys)
+        run_pipeline(db, private_key_hex, **api_keys)
         print("Initial run completed successfully.")
     except Exception as e:
         print(f"Error during initial run: {e}")
@@ -77,7 +105,7 @@ def main():
                 if datetime.now() >= next_run:
                     print(f"Running pipeline at: {datetime.now().strftime('%H:%M:%S')}")
                     try:
-                        run_pipeline(db, **api_keys)
+                        run_pipeline(db, private_key_hex, **api_keys)
                     except Exception as e:
                         print(f"Error running pipeline: {e}")
 

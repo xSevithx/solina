@@ -1,13 +1,15 @@
 from sqlalchemy.orm import Session
 from db.db_setup import get_db
-from engines.post_retriever import retrieve_recent_posts, fetch_external_context
+from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context
 from engines.short_term_mem import generate_short_term_memory
 from engines.long_term_mem import create_embedding, retrieve_relevant_memories, store_memory
 from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
+from engines.post_sender import send_post
+from engines.wallet_send import transfer_eth
 from models import Post, User
 
-def run_pipeline(db: Session, openrouter_api_key: str, openai_api_key: str):
+def run_pipeline(db: Session, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
     """
     Run the main pipeline for generating and posting content.
     
@@ -25,7 +27,11 @@ def run_pipeline(db: Session, openrouter_api_key: str, openai_api_key: str):
     
     # Step 2: Fetch external context
     # LEAVING THIS EMPTY FOR ANYTHING YOU WANT TO SUBSTITUTE (NEWS API, DATA SOURCE ETC)
-    external_context = [] 
+    reply_fetch_list = []
+    for e in recent_posts:
+        reply_fetch_list.append((e["tweet_id"], e["content"]))
+    notif_context = fetch_notification_context(reply_fetch_list)
+    external_context = notif_context
     
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(recent_posts, external_context, openrouter_api_key)
@@ -62,10 +68,11 @@ def run_pipeline(db: Session, openrouter_api_key: str, openai_api_key: str):
         db.commit()
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
-
-    new_db_post = Post(content=new_post_content, user_id=ai_user.id, type="text")
-    db.add(new_db_post)
-    db.commit()
+    tweet_id = send_post(new_post_content)
+    if tweet_id:
+        new_db_post = Post(content=new_post_content, user_id=ai_user.id, type="text", tweet_id=tweet_id)
+        db.add(new_db_post)
+        db.commit()
     
     print(f"New post generated with significance score {significance_score}: {new_post_content}")
 

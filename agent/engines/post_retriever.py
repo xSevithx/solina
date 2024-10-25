@@ -11,7 +11,22 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 from models import Post
 from sqlalchemy.orm import class_mapper
+from requests_oauthlib import OAuth1
 
+from dotenv import load_dotenv
+import os
+# Load environment variables from a .env file
+load_dotenv()
+
+# Accessing environment variables
+user_id = os.environ.get('USER_ID')
+user_name = os.environ.get('USER_NAME')
+consumer_key = os.environ.get('X_CONSUMER_KEY')
+consumer_secret = os.environ.get('X_CONSUMER_SECRET')
+access_token = os.environ.get('X_ACCESS_TOKEN')
+access_token_secret = os.environ.get('X_ACCESS_TOKEN_SECRET')
+
+auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
 
 def sqlalchemy_obj_to_dict(obj):
     """Convert a SQLAlchemy object to a dictionary."""
@@ -48,9 +63,9 @@ def post_to_dict(post: Post) -> Dict:
         "updated_at": post.updated_at.isoformat() if post.updated_at else None,
         "type": post.type,
         "comment_count": post.comment_count,
-        "image_path": post.image_path
+        "image_path": post.image_path,
+        "tweet_id": post.tweet_id
     }
-
 
 def fetch_external_context(api_key: str, query: str) -> List[str]:
     """
@@ -70,3 +85,91 @@ def fetch_external_context(api_key: str, query: str) -> List[str]:
         news_items = response.json().get('articles', [])
         return [item['title'] for item in news_items[:5]]
     return []
+
+
+
+def get_replies(tweet_id, username):
+    url = 'https://api.twitter.com/2/tweets/search/recent'
+    # Query to search for replies to the specific tweet directed to the username
+    query = f'to:{username} conversation_id:{tweet_id}'
+
+    params = {
+        'query': query,
+        'tweet.fields': 'author_id,conversation_id,created_at,text',
+        'expansions': 'author_id',
+        'user.fields': 'username,name',
+        'max_results': 10  # Adjust as needed (max 100)
+    }
+
+    response = requests.get(url, params=params, auth=auth)
+
+    if response.status_code == 200:
+        tweets = response.json()
+        return tweets
+    else:
+        print(f'Error: {response.status_code} - {response.text}')
+        return None
+    
+def get_replies(tweet_id, username):
+    url = 'https://api.twitter.com/2/tweets/search/recent'
+    # Query to search for replies to the specific tweet directed to the username
+    query = f'to:{username} conversation_id:{tweet_id}'
+
+    params = {
+        'query': query,
+        'tweet.fields': 'author_id,conversation_id,created_at,text',
+        'expansions': 'author_id',
+        'user.fields': 'username,name',
+        'max_results': 10  # Adjust as needed (max 100)
+    }
+
+    response = requests.get(url, params=params, auth=auth)
+
+    if response.status_code == 200:
+        tweets = response.json()
+        return tweets
+    else:
+        print(f'Error: {response.status_code} - {response.text}')
+        return None
+
+
+def get_mentions(user_id):
+    url = f'https://api.twitter.com/2/users/{user_id}/mentions'
+    params = {
+        'tweet.fields': 'author_id,created_at,text',
+        'expansions': 'author_id',  # Expand author_id to get user objects
+        'user.fields': 'username,name',  # Specify which user fields to include
+        'max_results': 10
+    }
+
+    response = requests.get(url, params=params, auth=auth)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f'Error getting mentions: {response.status_code} - {response.text}')
+        return None
+
+def fetch_notification_context(tweet_id_list: List[(str, str)]) -> List[str]:
+    context = []
+
+    for (tweet_id, tweet_content) in tweet_id_list:
+        replies = get_replies(tweet_id, user_name)
+        if replies and 'data' in replies:
+            users = {user['id']: user for user in replies.get('includes', {}).get('users', [])}
+            for tweet in replies['data']:
+                user = users.get(tweet['author_id'], {})
+                author_username = user.get('username', 'Unknown')
+                context.append(f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n")
+
+    mentions = get_mentions(user_id)
+
+    if mentions and 'data' in mentions:
+        # Create a mapping of user IDs to user information
+        users = {user['id']: user for user in mentions.get('includes', {}).get('users', [])}
+        for tweet in mentions['data']:
+            author_id = tweet['author_id']
+            user = users.get(author_id, {})
+            username = user.get('username', 'Unknown')
+            context.append(f"@{username} mentioned you: {tweet['text']}\n")
+
+    return context
