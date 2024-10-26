@@ -10,6 +10,7 @@ import secrets
 import hashlib
 from eth_keys import keys
 from requests_oauthlib import OAuth1
+from tweepy import Client, Paginator, TweepyException
 
 def generate_eth_account():
     # Securely generate a random number to use as a seed
@@ -75,7 +76,12 @@ def main():
     access_token_secret = os.environ.get('X_ACCESS_TOKEN_SECRET')
 
     auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
-
+    client = Client(
+        consumer_key=consumer_key, 
+        consumer_secret=consumer_secret, 
+        access_token=access_token, 
+        access_token_secret=access_token_secret
+    )
 
     private_key_hex, eth_address = generate_eth_account()
     print(f"generated agent exclusively-owned wallet: {eth_address}")
@@ -84,7 +90,7 @@ def main():
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
     try:
-        run_pipeline(db, user_id, user_name, auth, private_key_hex, **api_keys)
+        run_pipeline(db, user_id, user_name, auth, client, private_key_hex, **api_keys)
         print("Initial run completed successfully.")
     except Exception as e:
         print(f"Error during initial run: {e}")
@@ -118,7 +124,7 @@ def main():
                 if datetime.now() >= next_run:
                     print(f"Running pipeline at: {datetime.now().strftime('%H:%M:%S')}")
                     try:
-                        run_pipeline(db, user_id, user_name, auth, private_key_hex, **api_keys)
+                        run_pipeline(db, user_id, user_name, auth, client, private_key_hex, **api_keys)
                     except Exception as e:
                         print(f"Error running pipeline: {e}")
 

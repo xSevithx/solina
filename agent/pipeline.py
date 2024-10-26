@@ -7,9 +7,10 @@ from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
 from engines.post_sender import send_post
 from engines.wallet_send import transfer_eth
+from engines.follow_user import follow_by_username
 from models import Post, User
 
-def run_pipeline(db: Session, user_id, user_name, auth, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
+def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
     """
     Run the main pipeline for generating and posting content.
     
@@ -30,7 +31,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, private_key_hex: str, op
     reply_fetch_list = []
     for e in recent_posts:
         reply_fetch_list.append((e["tweet_id"], e["content"]))
-    notif_context = fetch_notification_context(user_id, user_name, auth, reply_fetch_list)
+    notif_context = fetch_notification_context(user_id, user_name, auth, client, reply_fetch_list)
     print(f"Notifications: {notif_context}")
     external_context = notif_context
     
@@ -78,6 +79,11 @@ def run_pipeline(db: Session, user_id, user_name, auth, private_key_hex: str, op
             db.add(new_db_post)
             db.commit()
     
+    # FOLLOW USERS
+    follow_by_username(auth, user_id, 'sxysun1')
+    # USING WALLET
+    transfer_eth(private_key_hex, '0x0', 0.0)
+
     print(f"New post generated with significance score {significance_score}: {new_post_content}")
 
 

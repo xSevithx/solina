@@ -112,7 +112,20 @@ def get_mentions(auth, user_id):
         print(f'Error getting mentions: {response.status_code} - {response.text}')
         return None
 
-def fetch_notification_context(user_id, user_name, auth, tweet_id_list) -> List[str]:
+def get_timeline(client)->List[str]:
+    replies = client.get_home_timeline(max_results=5)
+    if replies.data:
+        timeline_tweets = []
+        for reply in replies.data:
+            # Access and print the text and author_id of each reply
+            print(f"tweet id is {reply.id}, text is {reply.text}")
+            timeline_tweets.append(f"Tweet on your timeline: {reply.text}")
+        return 
+    else:
+        print("No tweet found on timeline.")
+        return []
+
+def fetch_notification_context(user_id, user_name, auth, client, tweet_id_list) -> List[str]:
     context = []
 
     for (tweet_id, tweet_content) in tweet_id_list:
@@ -124,15 +137,19 @@ def fetch_notification_context(user_id, user_name, auth, tweet_id_list) -> List[
                 author_username = user.get('username', 'Unknown')
                 context.append(f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n")
 
-    mentions = get_mentions(auth, user_id)
+    # mentions = get_mentions(auth, user_id)
 
-    if mentions and 'data' in mentions:
-        # Create a mapping of user IDs to user information
-        users = {user['id']: user for user in mentions.get('includes', {}).get('users', [])}
-        for tweet in mentions['data']:
-            author_id = tweet['author_id']
-            user = users.get(author_id, {})
-            username = user.get('username', 'Unknown')
-            context.append(f"@{username} mentioned you: {tweet['text']}\n")
+    timeline_tweets = get_timeline(client=client)
+    if timeline_tweets:
+        context.extend(timeline_tweets) 
+
+    # if mentions and 'data' in mentions:
+    #     # Create a mapping of user IDs to user information
+    #     users = {user['id']: user for user in mentions.get('includes', {}).get('users', [])}
+    #     for tweet in mentions['data']:
+    #         author_id = tweet['author_id']
+    #         user = users.get(author_id, {})
+    #         username = user.get('username', 'Unknown')
+    #         context.append(f"@{username} mentioned you: {tweet['text']}\n")
 
     return context
