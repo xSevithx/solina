@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from db.db_setup import get_db
 from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context
@@ -6,7 +7,7 @@ from engines.long_term_mem import create_embedding, retrieve_relevant_memories, 
 from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
 from engines.post_sender import send_post
-from engines.wallet_send import transfer_eth
+from engines.wallet_send import transfer_eth, wallet_address_in_post
 from engines.follow_user import follow_by_username
 from models import Post, User
 
@@ -34,7 +35,27 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     notif_context = fetch_notification_context(user_id, user_name, auth, client, reply_fetch_list)
     print(f"Notifications: {notif_context}")
     external_context = notif_context
-    
+
+    # Step 2.5 check wallet addresses in posts
+    tries = 0
+    max_tries = 3
+    while tries < max_tries:
+        wallet_addresses = wallet_address_in_post(notif_context, openrouter_api_key)
+        print(f"Wallet addresses chosen from Posts: {wallet_addresses}")
+        try:
+            wallets = json.loads(wallet_addresses)
+            if len(wallets) > 0:
+                # Send ETH to the wallet addresses
+                for wallet in wallets:
+                    transfer_eth(private_key_hex, wallet, 0.0)
+                break
+            else:
+                print("No wallet addresses found in posts.")
+                break
+        except:
+            tries += 1
+            continue
+        
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(recent_posts, external_context, openrouter_api_key)
     print(f"Short-term memory: {short_term_memory}")

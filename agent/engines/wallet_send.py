@@ -103,7 +103,7 @@ def wallet_address_in_post(posts, openrouter_api_key: str):
     If you choose to send ETH to one or more addresses or domains, 
     you must return ONLY a json object with a list with the addresses/domains in it.
     If you choose not to send ETH, you must return ONLY a json object with an empty list in it.
-    Only return the correctly formatted json object in both cases.
+    Only return the correctly formatted json object in both cases. Do not give any other information.
 
     Example Response if you choose to send ETH:
     [
