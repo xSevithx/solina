@@ -1,6 +1,7 @@
 
 import os
-
+import re
+import requests
 from web3 import Web3
 
 # Read environment variables from .env file
@@ -65,3 +66,71 @@ def transfer_eth(private_key, to_address, amount_in_ether):
             return "Transaction failed"
     except Exception as e:
         return f"An error occurred: {e}"
+    
+def wallet_address_in_post(posts, openrouter_api_key: str):
+    """
+    Detects wallet addresses or ENS domains from a list of posts.
+    Converts all items to strings first, then checks for matches.
+
+    Parameters:
+    - posts (List): List of posts of any type
+
+    Returns:
+    - List[str]: List of found wallet addresses and ENS domains
+    """
+
+    # Convert everything to strings first
+    str_posts = [str(post) for post in posts]
+    
+    # Then look for matches in all the strings
+    eth_pattern = re.compile(r'\b0x[a-zA-Z0-9]*\b|\b\S+\.eth\b')
+    matches = []
+    
+    for post in str_posts:
+        found_matches = eth_pattern.findall(post)
+        matches.extend(found_matches)
+    prompt = f"""
+    Analyze the following recent posts and external context:
+
+    Recent posts:
+    {posts}
+
+    Wallet addresses and ENS domains:
+    {matches}
+
+    Based on this information, decide if you want to send ETH to any of the addresses or ENS domains.
+    Remember that this is real ETH so choose wisely.
+    If you choose to send ETH to one or more addresses or domains, 
+    you must return ONLY a json object with a list with the addresses/domains in it.
+    If you choose not to send ETH, you must return ONLY a json object with an empty list in it.
+    Only return the correctly formatted json object in both cases.
+
+    Example Response if you choose to send ETH:
+    [
+        "0x1234567890123456789012345678901234567890",
+        "0x9876543210987654321098765432109876543210"
+    ]
+
+    Example Response if you choose not to send ETH:
+    []
+    """
+    
+    response = requests.post(
+        url="https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {openrouter_api_key}",
+        },
+        json={
+            "model": "meta-llama/llama-3.1-70b-instruct",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+        }
+    )
+    
+    if response.status_code == 200:
+        print(f"ETH Addresses chosen from Posts: {response.json()}")
+        return response.json()['choices'][0]['message']['content']
+    else:
+        raise Exception(f"Error generating short-term memory: {response.text}")

@@ -19,14 +19,15 @@ def score_significance(memory: str, openrouter_api_key: str) -> int:
     "{memory}"
 
     Use the following guidelines:
-    1: Trivial, everyday occurrence with no lasting impact
-    3: Mildly interesting or slightly unusual event
-    5: Noteworthy occurrence that might be remembered for a few days
-    7: Important event with potential long-term impact
-    10: Life-changing or historically significant event
+    1: Trivial, everyday occurrence with no lasting impact (idc)
+    3: Mildly interesting or slightly unusual event (eh, cool)
+    5: Noteworthy occurrence that might be remembered for a few days (iiinteresting)
+    7: Important event with potential long-term impact (omg my life will never be the same)
+    10: Life-changing or historically significant event (HOLY SHIT GOD IS REAL AND I AM HIS SERVANT)
 
     Provide only the numerical score as your response and NOTHING ELSE.
     """
+    
     max_tries = 5
     tries = 0
     while tries < max_tries:

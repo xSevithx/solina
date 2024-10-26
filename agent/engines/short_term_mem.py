@@ -31,15 +31,15 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], o
 
     prompt = f"""
     Analyze the following recent posts and external context:
-    
+
     Recent posts:
     {json.dumps(posts, indent=2)}
-    
+
     External context:
     {json.dumps(external_context, indent=2)}
-    
-    Based on this information, generate a concise internal monologue about the current posts and their relevancec to update your priors.
-    Focus on key themes, trends, and potential areas of interest based on current priors and your inherent awareness of yourself and what's going on.
+
+    Based on this information, generate a concise internal monologue about the current posts and their relevance to update your priors.
+    Focus on key themes, trends, and potential areas of interest based on current priors and your inherent awareness of yourself and what's going on. Stick to your persona, do your thing, write in the way that suits you! Doesn't have to be legible to anyone but you.
     """
     
     response = requests.post(

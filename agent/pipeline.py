@@ -41,7 +41,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     
     # Step 4: Create embedding for short-term memory
     short_term_embedding = create_embedding(short_term_memory, openai_api_key)
-    print(f"Short-term embedding: {short_term_embedding}")
+    # print(f"Short-term embedding: {short_term_embedding}")
     
     # Step 5: Retrieve relevant long-term memories
     long_term_memories = retrieve_relevant_memories(db, short_term_embedding)
@@ -70,7 +70,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
         db.commit()
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
-    # Only Bangers!
+    # Only Bangers! lol 
     if significance_score >= 3:
         tweet_id = send_post(auth, new_post_content)
         print(tweet_id)
@@ -79,8 +79,9 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
             db.add(new_db_post)
             db.commit()
     
+
     # FOLLOW USERS
-    follow_by_username(auth, user_id, 'sxysun1')
+    follow_by_username(auth, user_id, 'ropirito')
     # USING WALLET
     transfer_eth(private_key_hex, '0x0', 0.0)
 
