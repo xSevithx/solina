@@ -116,7 +116,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
             )
 
             if response.status_code == 200:
-                content = response.json()['choices'][0]['message']['content']
+                content = response.json()['choices'][0]['text']
                 if content and content.strip():
                     return content
                 

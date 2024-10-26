@@ -51,7 +51,7 @@ def score_significance(memory: str, llm_api_key: str) -> int:
             )
 
             if response.status_code == 200:
-                score_str = response.json()['choices'][0]['message']['content'].strip()
+                score_str = response.json()['choices'][0]['text'].strip()
                 print(f"Score generated for memory: {score_str}")
                 if score_str == "":
                     print(f"Empty response on attempt {tries + 1}")

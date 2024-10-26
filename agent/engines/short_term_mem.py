@@ -50,25 +50,28 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
     max_tries = 3
     while tries < max_tries:
         try:
-            response = requests.post(
-                url="https://api.hyperbolic.xyz/v1/completions",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {llm_api_key}",
-                },
-                json={
-                    "prompt": {prompt},
-                    "model": "meta-llama/Meta-Llama-3.1-405B",
-                    "presence_penalty": 0,
-                    "temperature": 1,
-                    "top_p": 0.95,
-                    "top_k": 40,
-                    "stream": False
-                }
-            )
+            url = "https://api.hyperbolic.xyz/v1/completions"
 
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {llm_api_key}"
+            }
+            
+            data = {
+                "prompt": prompt,
+                "model": "meta-llama/Meta-Llama-3.1-405B",
+                "max_tokens": 512,
+                "presence_penalty": 0,
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 40,
+                "stream": False
+            }
+            
+            response = requests.post(url, headers=headers, json=data)
+            
             if response.status_code == 200:
-                content = response.json()['choices'][0]['message']['content']
+                content = response.json()['choices'][0]['text']
                 print(f"Short-term memory generated with response: {content}")
                 if content and content.strip():
                     return content
