@@ -51,16 +51,13 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
     while tries < max_tries:
         try:
             response = requests.post(
-                url="https://api.hyperbolic.xyz/v1/chat/completions",
+                url="https://api.hyperbolic.xyz/v1/completions",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {llm_api_key}",
                 },
                 json={
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful and polite assistant."},
-                        {"role": "user", "content": prompt}
-                    ],
+                    "prompt": {prompt},
                     "model": "meta-llama/Meta-Llama-3.1-405B",
                     "presence_penalty": 0,
                     "temperature": 1,
@@ -78,8 +75,9 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
                 
             print(f"Attempt {tries + 1} failed for short-term memory generation. Status code: {response.status_code}")
             print(f"Response: {response.text}")
+            time.sleep(5)
             
         except Exception as e:
             print(f"Error on attempt {tries + 1}: {str(e)}")
             tries += 1
-            time.sleep(1)  # Add a small delay between retries
+            time.sleep(5)  # Add a small delay between retries

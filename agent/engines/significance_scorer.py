@@ -34,16 +34,13 @@ def score_significance(memory: str, llm_api_key: str) -> int:
     while tries < max_tries:
         try:
             response = requests.post(
-                url="https://api.hyperbolic.xyz/v1/chat/completions",
+                url="https://api.hyperbolic.xyz/v1/completions",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {llm_api_key}",
                 },
                 json={
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant that responds only with numerical scores between 1 and 10."},
-                        {"role": "user", "content": prompt}
-                    ],
+                    "prompt": prompt,
                     "model": "meta-llama/Meta-Llama-3.1-405B",
                     "presence_penalty": 0,
                     "temperature": 1,
