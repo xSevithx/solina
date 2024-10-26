@@ -8,10 +8,10 @@ from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
 from engines.post_sender import send_post
 from engines.wallet_send import transfer_eth, wallet_address_in_post
-from engines.follow_user import follow_by_username
+from engines.follow_user import follow_by_username, decide_to_follow_users
 from models import Post, User
 
-def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
+def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex: str, eth_mainnet_rpc_url: str, openrouter_api_key: str, openai_api_key: str):
     """
     Run the main pipeline for generating and posting content.
     
@@ -36,25 +36,66 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     print(f"Notifications: {notif_context}")
     external_context = notif_context
 
-    # Step 2.5 check wallet addresses in posts
-    tries = 0
-    max_tries = 3
-    while tries < max_tries:
-        wallet_addresses = wallet_address_in_post(notif_context, openrouter_api_key)
-        print(f"Wallet addresses chosen from Posts: {wallet_addresses}")
-        try:
-            wallets = json.loads(wallet_addresses)
-            if len(wallets) > 0:
-                # Send ETH to the wallet addresses
-                for wallet in wallets:
-                    transfer_eth(private_key_hex, wallet, 0.0)
+
+    if len(notif_context) > 0:
+        # Step 2.5 check wallet addresses in posts
+        tries = 0
+        max_tries = 3
+        while tries < max_tries:
+            wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, openrouter_api_key)
+            print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
+            try:
+                wallets = json.loads(wallet_data)
+                if len(wallets) > 0:
+                    # Send ETH to the wallet addresses with specified amounts
+                    for wallet in wallets:
+                        address = wallet['address']
+                        amount = wallet['amount']
+                        transfer_eth(private_key_hex, eth_mainnet_rpc_url, address, amount)
+                    break
+                else:
+                    print("No wallet addresses or amounts to send ETH to.")
+                    break
+            except json.JSONDecodeError as e:
+                print(f"Error parsing wallet data: {e}")
+                tries += 1
+                continue
+            except KeyError as e:
+                print(f"Missing key in wallet data: {e}")
                 break
-            else:
-                print("No wallet addresses found in posts.")
+
+        # Step 2.75 decide if follow some users
+        tries = 0
+        max_tries = 2
+        while tries < max_tries:
+            decision_data = decide_to_follow_users(notif_context, openrouter_api_key)
+            print(f"Decisions from Posts: {decision_data}")
+            try:
+                decisions = json.loads(decision_data)
+                if len(decisions) > 0:
+                    # Follow the users with specified scores
+                    for decision in decisions:
+                        username = decision['username']
+                        score = decision['score']
+                        if score > 0.98:
+                            follow_by_username(auth, user_id, username)
+                            print(f"user {username} has a high rizz of {score}, now following.")
+                        else:
+                            print(f"Score {score} for user {username} is below or equal to 0.97. Not following.")
+                    break
+                else:
+                    print("No users to follow.")
+                    break
+            except json.JSONDecodeError as e:
+                print(f"Error parsing decision data: {e}")
+                tries += 1
+                continue
+            except KeyError as e:
+                print(f"Missing key in decision data: {e}")
                 break
-        except:
-            tries += 1
-            continue
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                break
 
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(recent_posts, external_context, openrouter_api_key)
@@ -102,9 +143,9 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     
 
     # FOLLOW USERS
-    follow_by_username(auth, user_id, 'ropirito')
+    # follow_by_username(auth, user_id, 'ropirito')
     # USING WALLET
-    transfer_eth(private_key_hex, '0x0', 0.0)
+    # transfer_eth(private_key_hex, '0x0', 0.0)
 
     print(f"New post generated with significance score {significance_score}: {new_post_content}")
 

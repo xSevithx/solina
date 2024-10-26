@@ -113,13 +113,13 @@ def get_mentions(auth, user_id):
         return None
 
 def get_timeline(client)->List[str]:
-    replies = client.get_home_timeline(max_results=5)
+    replies = client.get_home_timeline(max_results=10)
     if replies.data:
         timeline_tweets = []
         for reply in replies.data:
             # Access and print the text and author_id of each reply
             print(f"tweet id is {reply.id}, text is {reply.text}")
-            timeline_tweets.append(f"Tweet on your timeline: {reply.text}")
+            timeline_tweets.append(f"Tweet on my timeline: {reply.text}")
         return 
     else:
         print("No tweet found on timeline.")
