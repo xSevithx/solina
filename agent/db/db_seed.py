@@ -49,8 +49,7 @@ def seed_database():
     existing_users = db.query(User).all()
     if not existing_users:
         users = [
-            User(username=f"user{i}", email=f"user{i}@example.com")
-            for i in range(1, 6)
+            User(username=f"lessdong", email=f"lessdong@example.com")
         ]
         db.add_all(users)
         db.commit()

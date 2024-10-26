@@ -55,7 +55,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
         except:
             tries += 1
             continue
-        
+
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(recent_posts, external_context, openrouter_api_key)
     print(f"Short-term memory: {short_term_memory}")
@@ -69,7 +69,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     print(f"Long-term memories: {long_term_memories}")
     
     # Step 6: Generate new post
-    new_post_content = generate_post(short_term_memory, long_term_memories, recent_posts, openrouter_api_key)
+    new_post_content = generate_post(short_term_memory, long_term_memories, recent_posts, external_context, openrouter_api_key)
     print(f"New post content: {new_post_content}")
 
     # Step 7: Score the significance of the new post
