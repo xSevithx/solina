@@ -31,9 +31,6 @@ def transfer_eth(private_key, eth_mainnet_rpc_url, to_address, amount_in_ether):
     - str: "Transaction failed" or an error message if the transaction was not successful or an error occurred.
     """
     try:
-        if get_wallet_balance(private_key, eth_mainnet_rpc_url) < 1:
-            return "balance insufficient to spend"
-        
         w3 = Web3(Web3.HTTPProvider(eth_mainnet_rpc_url))
 
         # Check if connected to blockchain
