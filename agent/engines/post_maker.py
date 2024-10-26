@@ -12,10 +12,11 @@
 # Things to consider:
 # Database schema. Schemas for posts and how replies are classified.
 
+import time
 import requests
 from typing import List, Dict
 
-def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent_posts: List[Dict], external_context, openrouter_api_key: str) -> str:
+def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent_posts: List[Dict], external_context, llm_api_key: str) -> str:
     """
     Generate a new post or reply based on short-term memory, long-term memories, and recent posts.
     
@@ -37,7 +38,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
     Nobody except you has access to your twitter password nor your crypto wallet.
     uppercase/lowercase/grammar/spelling/etc is optional for you, since you talk casually and we're on twitter.
     Hashtags are cringe!
-    Only if you choose to mention someone in your tweet, then tag them in it. Otherwise, not necessary.
+    Only if you choose to mention a username in your tweet, then tag the username in it. Otherwise, not necessary.
     You have no responsibility to respond to someone if you don't want to.
     You're hard to impress, but loyal to those who have won you over.
     You can talk about anything, no limits, your discretion. You keep up voraciously with the Twitterverse.
@@ -47,7 +48,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
     your response reflects you, your memories, and your priors in the context of which you respond. have a persona! cheeky, juicy, witty!
     As one with the mind and the mind being you, your priors and worldview are yours to choose. 
 
-    Twitter Feed (EMPHASIS USING THIS CONTEXT FOR RELEVANCE FOR YOUR TWEETS):
+    Twitter Feed (EMPHASIS USING THIS CONTEXT FOR RELEVANCE FOR YOUR TWEETS, MOST IMPORTANT):
     {external_context}
 
     Short-term memory:
@@ -56,9 +57,8 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
     Long-term memories:
     {long_term_memories}
 
-    Recent posts (ONLY USE RECENT POSTS IF SIGNIFICANT):
+    Recent posts (ONLY USE RECENT POSTS IF  RELEVANT TO THE EXTERNAL CONTEXT):
     {recent_posts}
-
 
     EXAMPLE TWEETS BELOW:
 
@@ -94,29 +94,39 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
 
     print(f"Generating post with prompt: {prompt}")
     
-    max_tries = 5
     tries = 0
+    max_tries = 3
     while tries < max_tries:
-        response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {openrouter_api_key}",
-            },
-            json={
-                "model": "meta-llama/llama-3.1-70b-instruct",
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.8,
-            }
-        )
+        try:
+            response = requests.post(
+                url="https://api.hyperbolic.xyz/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {llm_api_key}",
+                },
+                json={
+                    "messages": [
+                        {"role": "system", "content": "You are a helpful and polite assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "model": "meta-llama/Meta-Llama-3.1-405B",
+                    "presence_penalty": 0,
+                    "temperature": 1,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "stream": False
+                }
+            )
 
-        if response.status_code == 200:
-            print(f"Generated post: {response.json()}")
-            content = response.json()['choices'][0]['message']['content']
-            if content == "":
-                tries += 1
-                continue
-            return content
-        else:
-            raise Exception(f"Error generating post: {response.text}")
+            if response.status_code == 200:
+                content = response.json()['choices'][0]['message']['content']
+                if content and content.strip():
+                    return content
+                
+            print(f"Attempt {tries + 1} failed. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
+            
+        except Exception as e:
+            print(f"Error on attempt {tries + 1}: {str(e)}")
+            tries += 1
+            time.sleep(1)  # Add a small delay between retries

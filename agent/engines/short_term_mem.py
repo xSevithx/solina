@@ -9,6 +9,7 @@
 # processed information into an internal thought / monologue about current posts and relevance
 
 import json
+import time
 from typing import List, Dict
 import requests
 from sqlalchemy.orm import class_mapper
@@ -16,7 +17,7 @@ from sqlalchemy.orm import class_mapper
 
 # Can modify the type depending on the format that twitter api returns for posts
 # external_context in case you want to include information from other sources 
-def generate_short_term_memory(posts: List[Dict], external_context: List[str], openrouter_api_key: str) -> str:
+def generate_short_term_memory(posts: List[Dict], external_context: List[str], llm_api_key: str) -> str:
     """
     Generate short-term memory based on recent posts and external context.
     
@@ -39,25 +40,46 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], o
     {json.dumps(external_context, indent=2)}
 
     Based on this information, generate a concise internal monologue about the current posts and their relevance to update your priors.
-    Focus on key themes, trends, and potential areas of interest based on current priors and your inherent awareness of yourself and what's going on. Stick to your persona, do your thing, write in the way that suits you! Doesn't have to be legible to anyone but you.
+    Focus on key themes, trends, and potential areas of interest MOST IMPORTANTLY based on the External Context tweets. 
+    Recent posts don't need to be considered unless they are relevant to the External Context tweets. Refer to the username if thinking about someone.
+    Your current priors and your inherent awareness of yourself and what's going on can have an impact too. Stick to your persona, do your thing, write in the way that suits you! 
+    Doesn't have to be legible to anyone but you.
     """
     
-    response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {openrouter_api_key}",
-        },
-        json={
-            "model": "meta-llama/llama-3.1-70b-instruct",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-        }
-    )
-    
-    if response.status_code == 200:
-        print(f"Generated short-term memory: {response.json()}")
-        return response.json()['choices'][0]['message']['content']
-    else:
-        raise Exception(f"Error generating short-term memory: {response.text}")
+    tries = 0
+    max_tries = 3
+    while tries < max_tries:
+        try:
+            response = requests.post(
+                url="https://api.hyperbolic.xyz/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {llm_api_key}",
+                },
+                json={
+                    "messages": [
+                        {"role": "system", "content": "You are a helpful and polite assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "model": "meta-llama/Meta-Llama-3.1-405B",
+                    "presence_penalty": 0,
+                    "temperature": 1,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "stream": False
+                }
+            )
+
+            if response.status_code == 200:
+                content = response.json()['choices'][0]['message']['content']
+                print(f"Short-term memory generated with response: {content}")
+                if content and content.strip():
+                    return content
+                
+            print(f"Attempt {tries + 1} failed for short-term memory generation. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
+            
+        except Exception as e:
+            print(f"Error on attempt {tries + 1}: {str(e)}")
+            tries += 1
+            time.sleep(1)  # Add a small delay between retries

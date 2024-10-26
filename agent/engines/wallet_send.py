@@ -67,7 +67,7 @@ def transfer_eth(private_key, to_address, amount_in_ether):
     except Exception as e:
         return f"An error occurred: {e}"
     
-def wallet_address_in_post(posts, openrouter_api_key: str):
+def wallet_address_in_post(posts,llm_api_key: str):
     """
     Detects wallet addresses or ENS domains from a list of posts.
     Converts all items to strings first, then checks for matches.
@@ -116,16 +116,21 @@ def wallet_address_in_post(posts, openrouter_api_key: str):
     """
     
     response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
+        url="https://api.hyperbolic.xyz/v1/chat/completions",
         headers={
-            "Authorization": f"Bearer {openrouter_api_key}",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {llm_api_key}",
         },
         json={
-            "model": "meta-llama/llama-3.1-70b-instruct",
             "messages": [
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.7,
+            "model": "meta-llama/Meta-Llama-3.1-405B",
+            "presence_penalty": 0,
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "stream": False
         }
     )
     

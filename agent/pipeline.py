@@ -11,7 +11,7 @@ from engines.wallet_send import transfer_eth, wallet_address_in_post
 from engines.follow_user import follow_by_username
 from models import Post, User
 
-def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex: str, openrouter_api_key: str, openai_api_key: str):
+def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex: str, llm_api_key: str, openai_api_key: str):
     """
     Run the main pipeline for generating and posting content.
     
@@ -40,7 +40,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     tries = 0
     max_tries = 3
     while tries < max_tries:
-        wallet_addresses = wallet_address_in_post(notif_context, openrouter_api_key)
+        wallet_addresses = wallet_address_in_post(notif_context, llm_api_key)
         print(f"Wallet addresses chosen from Posts: {wallet_addresses}")
         try:
             wallets = json.loads(wallet_addresses)
@@ -57,7 +57,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
             continue
 
     # Step 3: Generate short-term memory
-    short_term_memory = generate_short_term_memory(recent_posts, external_context, openrouter_api_key)
+    short_term_memory = generate_short_term_memory(recent_posts, external_context, llm_api_key)
     print(f"Short-term memory: {short_term_memory}")
     
     # Step 4: Create embedding for short-term memory
@@ -69,11 +69,11 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     print(f"Long-term memories: {long_term_memories}")
     
     # Step 6: Generate new post
-    new_post_content = generate_post(short_term_memory, long_term_memories, recent_posts, external_context, openrouter_api_key)
+    new_post_content = generate_post(short_term_memory, long_term_memories, recent_posts, external_context, llm_api_key)
     print(f"New post content: {new_post_content}")
 
     # Step 7: Score the significance of the new post
-    significance_score = score_significance(new_post_content, openrouter_api_key)
+    significance_score = score_significance(new_post_content, llm_api_key)
     print(f"Significance score: {significance_score}")
     
     # Step 8: Store the new post in long-term memory if significant enough
@@ -84,9 +84,9 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     
     # Step 9: Save the new post to the database
     # Update these values to whatever you want
-    ai_user = db.query(User).filter(User.username == "ai_bot").first()
+    ai_user = db.query(User).filter(User.username == "lessdong").first()
     if not ai_user:
-        ai_user = User(username="ai_bot", email="ai_bot@example.com")
+        ai_user = User(username="lessdong", email="lessdong@example.com")
         db.add(ai_user)
         db.commit()
 
@@ -96,7 +96,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
         tweet_id = send_post(auth, new_post_content)
         print(tweet_id)
         if tweet_id:
-            new_db_post = Post(content=new_post_content, user_id=ai_user.id, type="text", tweet_id=tweet_id)
+            new_db_post = Post(content=new_post_content, user_id=ai_user.id, username=ai_user.username, type="text", tweet_id=tweet_id)
             db.add(new_db_post)
             db.commit()
     

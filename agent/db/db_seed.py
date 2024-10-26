@@ -47,6 +47,7 @@ def seed_database():
     
     # Create users if they don't exist
     existing_users = db.query(User).all()
+    print(f"Existing users: {existing_users}")
     if not existing_users:
         users = [
             User(username=f"lessdong", email=f"lessdong@example.com")
@@ -80,15 +81,17 @@ def seed_database():
             for _ in range(num_comments):
                 if remaining_examples:
                     content = remaining_examples.pop(0)
+                    random_user = random.choice(users)
                     comment = Comment(
                         content=content,
-                        user_id=random.choice(users).id,
+                        user_id=random_user.id,
+                        username=random_user.username,
                         post_id=post.id,
                         created_at=post.created_at + timedelta(hours=random.randint(1, 24))
                     )
                     db.add(comment)
     db.commit()
-
+    
     # Create likes
     for post in posts:
         for user in random.sample(users, k=random.randint(0, len(users))):

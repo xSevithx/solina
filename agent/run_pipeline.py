@@ -62,7 +62,7 @@ def main():
     
     # Load environment variables
     api_keys = {
-        'openrouter_api_key': os.getenv("OPENROUTER_API_KEY"),
+        'llm_api_key': os.getenv("HYPERBOLIC_API_KEY"),
         'openai_api_key': os.getenv("OPENAI_API_KEY"),
         # 'news_api_key': os.getenv("NEWS_API_KEY")
     }
