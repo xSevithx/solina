@@ -5,7 +5,7 @@ import requests
 from web3 import Web3
 from ens import ENS
 
-def get_wallet_balance(eth_mainnet_rpc_url, private_key):
+def get_wallet_balance(private_key, eth_mainnet_rpc_url):
     w3 = Web3(Web3.HTTPProvider(eth_mainnet_rpc_url))
     public_address = w3.eth.account.from_key(private_key).address
 
@@ -31,6 +31,9 @@ def transfer_eth(private_key, eth_mainnet_rpc_url, to_address, amount_in_ether):
     - str: "Transaction failed" or an error message if the transaction was not successful or an error occurred.
     """
     try:
+        if get_wallet_balance(private_key, eth_mainnet_rpc_url) < 1:
+            return "balance insufficient to spend"
+        
         w3 = Web3(Web3.HTTPProvider(eth_mainnet_rpc_url))
 
         # Check if connected to blockchain

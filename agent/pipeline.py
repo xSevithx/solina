@@ -40,7 +40,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     if len(notif_context) > 0:
         # Step 2.5 check wallet addresses in posts
         tries = 0
-        max_tries = 3
+        max_tries = 2
         while tries < max_tries:
             wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, openrouter_api_key)
             print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
