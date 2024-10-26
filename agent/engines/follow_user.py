@@ -1,5 +1,8 @@
 import requests
 import re
+from twitter.account import Account
+from twitter.scraper import Scraper
+
 
 def decide_to_follow_users(posts, openrouter_api_key: str):
     """
@@ -16,7 +19,7 @@ def decide_to_follow_users(posts, openrouter_api_key: str):
     str_posts = [str(post) for post in posts]
 
     # Extract Twitter usernames
-    twitter_pattern = re.compile(r'@([A-Za-z0-9_]{1,15})')
+    twitter_pattern = re.compile(r"@([A-Za-z0-9_]{1,15})")
     twitter_usernames = []
 
     for post in str_posts:
@@ -68,48 +71,33 @@ def decide_to_follow_users(posts, openrouter_api_key: str):
         },
         json={
             "model": "meta-llama/llama-3.1-70b-instruct",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
+            "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.7,
-        }
+        },
     )
 
     if response.status_code == 200:
         print(f"Decisions from Posts: {response.json()}")
-        return response.json()['choices'][0]['message']['content']
+        return response.json()["choices"][0]["message"]["content"]
     else:
         raise Exception(f"Error generating decision: {response.text}")
 
-def get_user_id(auth, username):
-    url = f'https://api.twitter.com/2/users/by/username/{username}'
-    params = {
-        'user.fields': 'id,username',
-    }
-    response = requests.get(url, auth=auth, params=params)
-    if response.status_code == 200:
-        user_data = response.json()
-        return user_data['data']['id']
-    else:
-        print(f'Error fetching user ID: {response.status_code} - {response.text}')
-        return None
-    
-def follow_user(auth, source_user_id, target_user_id):
-    url = f'https://api.twitter.com/2/users/{source_user_id}/following'
-    json_data = {
-        'target_user_id': target_user_id,
-    }
-    response = requests.post(url, auth=auth, json=json_data)
-    if response.status_code in [200, 201]:
-        print(f'Successfully followed user ID {target_user_id}')
-        return True
-    else:
-        print(f'Error: {response.status_code} - {response.text}')
-        return False
-    
-def follow_by_username(auth, my_user_id, username):
 
-    target = get_user_id(auth, username=username)
+def get_user_id(account: Account, username):
+    scraper = Scraper(account.session.cookies)
+    users = scraper.users([username])
+    if users:
+        return users[0].id
+    else:
+        return None
+
+
+def follow_user(account: Account, user_id):
+    return account.follow(user_id)
+
+
+def follow_by_username(account: Account, username):
+
+    target = get_user_id(account, username=username)
     if target:
-        follow_user(auth, my_user_id, target)
-    
+        follow_user(account, target)

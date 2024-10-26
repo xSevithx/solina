@@ -1,5 +1,5 @@
 # Post Retrieval
-# Objective: Retrieves all recent posts that would appear on timeline 
+# Objective: Retrieves all recent posts that would appear on timeline
 
 # Outputs:
 # Timeline posts used by short-term memory
@@ -11,6 +11,8 @@ from typing import List, Dict
 from sqlalchemy.orm import Session
 from models import Post
 from sqlalchemy.orm import class_mapper
+from twitter.account import Account
+from twitter.scraper import Scraper
 
 
 def sqlalchemy_obj_to_dict(obj):
@@ -20,23 +22,26 @@ def sqlalchemy_obj_to_dict(obj):
     columns = [column.key for column in class_mapper(obj.__class__).columns]
     return {column: getattr(obj, column) for column in columns}
 
+
 def convert_posts_to_dict(posts):
     """Convert a list of SQLAlchemy Post objects to a list of dictionaries."""
     return [sqlalchemy_obj_to_dict(post) for post in posts]
 
+
 def retrieve_recent_posts(db: Session, limit: int = 10) -> List[Dict]:
     """
     Retrieve the most recent posts from the database.
-    
+
     Args:
         db (Session): Database session
         limit (int): Number of posts to retrieve
-    
+
     Returns:
         List[Dict]: List of recent posts as dictionaries
     """
     recent_posts = db.query(Post).order_by(Post.created_at.desc()).limit(limit).all()
     return [post_to_dict(post) for post in recent_posts]
+
 
 def post_to_dict(post: Post) -> Dict:
     """Convert a Post object to a dictionary."""
@@ -49,17 +54,18 @@ def post_to_dict(post: Post) -> Dict:
         "type": post.type,
         "comment_count": post.comment_count,
         "image_path": post.image_path,
-        "tweet_id": post.tweet_id
+        "tweet_id": post.tweet_id,
     }
+
 
 def fetch_external_context(api_key: str, query: str) -> List[str]:
     """
     Fetch external context from a news API or other source.
-    
+
     Args:
         api_key (str): API key for the external service
         query (str): Search query
-    
+
     Returns:
         List[str]: List of relevant news headlines or context
     """
@@ -67,81 +73,72 @@ def fetch_external_context(api_key: str, query: str) -> List[str]:
     url = f"https://newsapi.org/v2/everything?q={query}&apiKey={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
-        news_items = response.json().get('articles', [])
-        return [item['title'] for item in news_items[:5]]
+        news_items = response.json().get("articles", [])
+        return [item["title"] for item in news_items[:5]]
     return []
 
 
-
-def get_replies(auth, tweet_id, username):
-    url = 'https://api.twitter.com/2/tweets/search/recent'
-    # Query to search for replies to the specific tweet directed to the username
-    query = f'to:{username} conversation_id:{tweet_id}'
-
-    params = {
-        'query': query,
-        'tweet.fields': 'author_id,conversation_id,created_at,text',
-        'expansions': 'author_id',
-        'user.fields': 'username,name',
-        'max_results': 10  # Adjust as needed (max 100)
-    }
-
-    response = requests.get(url, params=params, auth=auth)
-
-    if response.status_code == 200:
-        tweets = response.json()
-        return tweets
-    else:
-        print(f'Error: {response.status_code} - {response.text}')
-        return None
+def get_replies(account: Account, tweet_id):
+    scraper = Scraper(account.session.cookies)
+    res = scraper.tweets_details([tweet_id])
+    return res[0]
 
 
-def get_mentions(auth, user_id):
-    url = f'https://api.twitter.com/2/users/{user_id}/mentions'
-    params = {
-        'tweet.fields': 'author_id,created_at,text',
-        'expansions': 'author_id',  # Expand author_id to get user objects
-        'user.fields': 'username,name',  # Specify which user fields to include
-        'max_results': 10
-    }
+# def get_mentions(auth, user_id):
+#     url = f"https://api.twitter.com/2/users/{user_id}/mentions"
+#     params = {
+#         "tweet.fields": "author_id,created_at,text",
+#         "expansions": "author_id",  # Expand author_id to get user objects
+#         "user.fields": "username,name",  # Specify which user fields to include
+#         "max_results": 10,
+#     }
 
-    response = requests.get(url, params=params, auth=auth)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f'Error getting mentions: {response.status_code} - {response.text}')
-        return None
+#     response = requests.get(url, params=params, auth=auth)
+#     if response.status_code == 200:
+#         return response.json()
+#     else:
+#         print(f"Error getting mentions: {response.status_code} - {response.text}")
+#         return None
 
-def get_timeline(client)->List[str]:
-    replies = client.get_home_timeline(max_results=10)
-    if replies.data:
-        timeline_tweets = []
-        for reply in replies.data:
-            # Access and print the text and author_id of each reply
-            print(f"tweet id is {reply.id}, text is {reply.text}")
-            timeline_tweets.append(f"Tweet on my timeline: {reply.text}")
-        return 
-    else:
-        print("No tweet found on timeline.")
-        return []
 
-def fetch_notification_context(user_id, user_name, auth, client, tweet_id_list) -> List[str]:
+def get_timeline(account: Account) -> List[str]:
+    # replies = client.get_home_timeline(max_results=10)
+    # if replies.data:
+    #     timeline_tweets = []
+    #     for reply in replies.data:
+    #         # Access and print the text and author_id of each reply
+    #         print(f"tweet id is {reply.id}, text is {reply.text}")
+    #         timeline_tweets.append(f"Tweet on my timeline: {reply.text}")
+    #     return
+    # else:
+    #     print("No tweet found on timeline.")
+    #     return []
+    timeline = account.home_latest_timeline(10)
+    return timeline
+
+
+def fetch_notification_context(account: Account, tweet_id_list) -> List[str]:
     context = []
 
-    for (tweet_id, tweet_content) in tweet_id_list:
-        replies = get_replies(auth, tweet_id, user_name)
-        if replies and 'data' in replies:
-            users = {user['id']: user for user in replies.get('includes', {}).get('users', [])}
-            for tweet in replies['data']:
-                user = users.get(tweet['author_id'], {})
-                author_username = user.get('username', 'Unknown')
-                context.append(f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n")
+    for tweet_id, tweet_content in tweet_id_list:
+        replies = get_replies(account, tweet_id)
+        if replies and "data" in replies:
+            users = {
+                user["id"]: user
+                for user in replies.get("includes", {}).get("users", [])
+            }
+            for tweet in replies["data"]:
+                user = users.get(tweet["author_id"], {})
+                author_username = user.get("username", "Unknown")
+                context.append(
+                    f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n"
+                )
 
     # mentions = get_mentions(auth, user_id)
 
-    timeline_tweets = get_timeline(client=client)
+    timeline_tweets = get_timeline(account)
     if timeline_tweets:
-        context.extend(timeline_tweets) 
+        context.extend(timeline_tweets)
 
     # if mentions and 'data' in mentions:
     #     # Create a mapping of user IDs to user information
