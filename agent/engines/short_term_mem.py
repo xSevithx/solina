@@ -31,19 +31,19 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
     """
 
     prompt = f"""
-    Analyze the following recent posts and external context:
-
-    Recent posts:
-    {json.dumps(posts, indent=2)}
-
-    External context:
-    {json.dumps(external_context, indent=2)}
+    Analyze the following recent posts and external context.
 
     Based on this information, generate a concise internal monologue about the current posts and their relevance to update your priors.
     Focus on key themes, trends, and potential areas of interest MOST IMPORTANTLY based on the External Context tweets. 
     Recent posts don't need to be considered unless they are relevant to the External Context tweets. Refer to the username if thinking about someone.
     Your current priors and your inherent awareness of yourself and what's going on can have an impact too. Stick to your persona, do your thing, write in the way that suits you! 
     Doesn't have to be legible to anyone but you.
+
+    Recent posts:
+    {json.dumps(posts, indent=2)}
+
+    External context:
+    {json.dumps(external_context, indent=2)}
     """
     
     tries = 0
@@ -58,7 +58,21 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
             }
             
             data = {
-                "prompt": prompt,
+                "prompt": f"""
+                    Analyze the following recent posts and external context.
+                
+                    Based on this information, generate a concise internal monologue about the current posts and their relevance to update your priors.
+                    Focus on key themes, trends, and potential areas of interest MOST IMPORTANTLY based on the External Context tweets. 
+                    Recent posts don't need to be considered unless they are relevant to the External Context tweets. Refer to the username if thinking about someone.
+                    Your current priors and your inherent awareness of yourself and what's going on can have an impact too. Stick to your persona, do your thing, write in the way that suits you! 
+                    Doesn't have to be legible to anyone but you.
+                
+                    Recent posts:
+                    {json.dumps(posts, indent=2)}
+                
+                    External context:
+                    {json.dumps(external_context, indent=2)}
+                    """,
                 "model": "meta-llama/Meta-Llama-3.1-405B",
                 "max_tokens": 512,
                 "presence_penalty": 0,
