@@ -114,6 +114,7 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
         matches.extend(found_matches)
     
     prompt = f"""
+    <|im_start|>system
     Analyze the following recent posts and external context:
 
     Recent posts:
@@ -144,6 +145,8 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
     []
 
     Provide your response.
+    <|im_end|>
+    <|im_start|>wallet_decider\n
     """
     
     response = requests.post(

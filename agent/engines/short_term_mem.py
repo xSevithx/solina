@@ -59,6 +59,7 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
             
             data = {
                 "prompt": f"""
+                    <|im_start|>system
                     Analyze the following recent posts and external context.
                 
                     Based on this information, generate a concise internal monologue about the current posts and their relevance to update your priors.
@@ -72,6 +73,8 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
                 
                     External context:
                     {json.dumps(external_context, indent=2)}
+                    <|im_end|>
+                    <|im_start|>thinker\n
                     """,
                 "model": "meta-llama/Meta-Llama-3.1-405B",
                 "max_tokens": 512,
@@ -79,7 +82,8 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
                 "temperature": 1,
                 "top_p": 0.95,
                 "top_k": 40,
-                "stream": False
+                "stream": False,
+                "stop":["<|im_end|>"]
             }
             
             response = requests.post(url, headers=headers, json=data)

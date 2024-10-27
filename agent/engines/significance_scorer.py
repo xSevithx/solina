@@ -41,6 +41,7 @@ def score_significance(memory: str, llm_api_key: str) -> int:
                 },
                 json={
                     "prompt": f"""
+                    <|im_start|>system
                     On a scale of 1-10, rate the significance of the following memory:
                 
                     "{memory}"
@@ -53,13 +54,16 @@ def score_significance(memory: str, llm_api_key: str) -> int:
                     10: Life-changing or historically significant event (HOLY SHIT GOD IS REAL AND I AM HIS SERVANT)
                 
                     Provide only the numerical score as your response and NOTHING ELSE.
+                    <|im_end|>
+                    <|im_start|>scorer\n
                     """,
                     "model": "meta-llama/Meta-Llama-3.1-405B",
                     "presence_penalty": 0,
                     "temperature": 1,
                     "top_p": 0.95,
                     "top_k": 40,
-                    "stream": False
+                    "stream": False,
+                    "stop":["<|im_end|>"]
                 }
             )
 
