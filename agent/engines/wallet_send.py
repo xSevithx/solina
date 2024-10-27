@@ -162,6 +162,6 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
     
     if response.status_code == 200:
         print(f"ETH Addresses and amounts chosen from Posts: {response.json()}")
-        return response.json()['choices'][0]['message']['content']
+        return response.json()['choices'][0]['text']
     else:
         raise Exception(f"Error generating short-term memory: {response.text}")
