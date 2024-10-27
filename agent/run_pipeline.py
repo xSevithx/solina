@@ -90,7 +90,7 @@ def main():
     print(f"generated agent exclusively-owned wallet: {eth_address}")
     # TODO: Agent need to know what's its wallet
     send_post(auth, eth_address)
-
+    
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
     try:

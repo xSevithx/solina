@@ -52,6 +52,46 @@ def post_to_dict(post: Post) -> Dict:
         "tweet_id": post.tweet_id
     }
 
+def format_post_list(posts) -> str:
+    """
+    Format posts into a readable string, handling both pre-formatted strings 
+    and lists of post dictionaries.
+    
+    Args:
+        posts: Either a string of posts or List[Dict] of post objects
+        
+    Returns:
+        str: Formatted string of posts
+    """
+    # If it's already a string, return it
+    if isinstance(posts, str):
+        return posts
+        
+    # If it's None or empty
+    if not posts:
+        return "No recent posts"
+    
+    # If it's a list of dictionaries
+    if isinstance(posts, list):
+        formatted = []
+        for post in posts:
+            try:
+                # Handle dictionary format
+                if isinstance(post, dict):
+                    content = post.get('content', '')
+                    formatted.append(f"- {content}")
+                # Handle string format
+                elif isinstance(post, str):
+                    formatted.append(f"- {post}")
+            except Exception as e:
+                print(f"Error formatting post: {e}")
+                continue
+        
+        return "\n".join(formatted)
+    
+    # If we can't process it, return as string
+    return str(posts)
+
 def fetch_external_context(api_key: str, query: str) -> List[str]:
     """
     Fetch external context from a news API or other source.
@@ -112,7 +152,7 @@ def get_mentions(auth, user_id):
         print(f'Error getting mentions: {response.status_code} - {response.text}')
         return None
 
-def get_timeline(client)->List[str]:
+def get_timeline(client) -> List[str]:
     replies = client.get_home_timeline(max_results=10)
     if replies.data:
         timeline_tweets = []
@@ -120,14 +160,65 @@ def get_timeline(client)->List[str]:
             # Access and print the text and author_id of each reply
             print(f"tweet id is {reply.id}, text is {reply.text}")
             timeline_tweets.append(f"Tweet on my timeline: {reply.text}")
-        return 
+        return timeline_tweets  # Changed from 'return' to 'return timeline_tweets'
     else:
         print("No tweet found on timeline.")
         return []
 
-def fetch_notification_context(user_id, user_name, auth, client, tweet_id_list) -> List[str]:
+def format_twitter_context(context_list: List[str]) -> str:
+    """
+    Format Twitter context (replies, mentions, timeline) into a clean, readable string
+    suitable for language model consumption.
+    
+    Args:
+        context_list (List[str]): List of context strings from fetch_notification_context
+        
+    Returns:
+        str: Formatted string of Twitter context
+    """
+    if not context_list:
+        return "No recent Twitter activity"
+        
+    # Group different types of interactions
+    replies = []
+    timeline = []
+    mentions = []
+    
+    for item in context_list:
+        item = item.strip()
+        if item.startswith("@") and "replied to me:" in item:
+            replies.append(item)
+        elif item.startswith("Tweet on my timeline:"):
+            # Clean up timeline format
+            clean_tweet = item.replace("Tweet on my timeline: ", "")
+            timeline.append(f"Timeline: {clean_tweet}")
+        elif "mentioned you:" in item:
+            mentions.append(item)
+            
+    # Build the formatted output
+    formatted_parts = []
+    
+    if replies:
+        formatted_parts.append("Recent replies:")
+        formatted_parts.extend(f"- {reply}" for reply in replies)
+        formatted_parts.append("")  # Add spacing
+        
+    if timeline:
+        formatted_parts.append("From my timeline:")
+        formatted_parts.extend(f"- {tweet}" for tweet in timeline)
+        formatted_parts.append("")
+        
+    if mentions:
+        formatted_parts.append("Recent mentions:")
+        formatted_parts.extend(f"- {mention}" for mention in mentions)
+        
+    return "\n".join(formatted_parts).strip()
+
+# Modified fetch_notification_context to use the formatter
+def fetch_notification_context(user_id, user_name, auth, client, tweet_id_list) -> str:
     context = []
 
+    # Collect replies
     for (tweet_id, tweet_content) in tweet_id_list:
         replies = get_replies(auth, tweet_id, user_name)
         if replies and 'data' in replies:
@@ -135,21 +226,17 @@ def fetch_notification_context(user_id, user_name, auth, client, tweet_id_list) 
             for tweet in replies['data']:
                 user = users.get(tweet['author_id'], {})
                 author_username = user.get('username', 'Unknown')
-                context.append(f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n")
+                context.append(f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content}")
 
-    # mentions = get_mentions(auth, user_id)
-
+    # Collect timeline tweets
+    print("Fetching timeline tweets...")
     timeline_tweets = get_timeline(client=client)
+    print(f"Retrieved timeline tweets: {timeline_tweets}")
     if timeline_tweets:
-        context.extend(timeline_tweets) 
+        context.extend(timeline_tweets)
 
-    # if mentions and 'data' in mentions:
-    #     # Create a mapping of user IDs to user information
-    #     users = {user['id']: user for user in mentions.get('includes', {}).get('users', [])}
-    #     for tweet in mentions['data']:
-    #         author_id = tweet['author_id']
-    #         user = users.get(author_id, {})
-    #         username = user.get('username', 'Unknown')
-    #         context.append(f"@{username} mentioned you: {tweet['text']}\n")
-
-    return context
+    # Format everything
+    print(f"Context before formatting: {context}")
+    formatted_context = format_twitter_context(context)
+    print(f"Formatted context: {formatted_context}")
+    return formatted_context

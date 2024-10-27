@@ -63,9 +63,38 @@ def store_memory(db: Session, content: str, embedding: List[float], significance
     db.add(new_memory)
     db.commit()
 
-def retrieve_relevant_memories(db: Session, query_embedding: List[float], top_k: int = 5) -> List[Dict]:
+def format_long_term_memories(memories: List[Dict]) -> str:
     """
-    Retrieve relevant memories based on the query embedding.
+    Format retrieved long-term memories into a clean, readable string format
+    suitable for language model consumption.
+    
+    Args:
+        memories (List[Dict]): List of memories with content and significance score
+        
+    Returns:
+        str: Formatted string of memories
+    """
+    if not memories:
+        return "No relevant memories found"
+    
+    # Sort memories by significance score for better organization
+    sorted_memories = sorted(memories, key=lambda x: x.get('significance_score', 0), reverse=True)
+    
+    formatted_parts = ["Past memories and thoughts:"]
+    
+    for memory in sorted_memories:
+        content = memory.get('content', '').strip()
+        # Optional: include score if you want
+        # score = memory.get('significance_score', 0)
+        if content:
+            formatted_parts.append(f"- {content}")
+    
+    return "\n".join(formatted_parts)
+
+# Modified retrieve_relevant_memories to use the formatter
+def retrieve_relevant_memories(db: Session, query_embedding: List[float], top_k: int = 5) -> str:  # Changed return type to str
+    """
+    Retrieve and format relevant memories based on the query embedding.
     
     Args:
         db (Session): Database session
@@ -73,7 +102,7 @@ def retrieve_relevant_memories(db: Session, query_embedding: List[float], top_k:
         top_k (int): Number of top memories to retrieve
     
     Returns:
-        List[Dict]: List of relevant memories with their content and significance score
+        str: Formatted string of relevant memories
     """
     all_memories = db.query(LongTermMemory).all()
     
@@ -87,7 +116,9 @@ def retrieve_relevant_memories(db: Session, query_embedding: List[float], top_k:
     
     sorted_memories = sorted(similarities, key=lambda x: x[1], reverse=True)[:top_k]
     
-    return [
+    memories_list = [
         {"content": memory.content, "significance_score": memory.significance_score}
         for memory, _ in sorted_memories
     ]
+    
+    return format_long_term_memories(memories_list)

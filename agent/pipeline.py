@@ -1,7 +1,8 @@
 import json
+import time
 from sqlalchemy.orm import Session
 from db.db_setup import get_db
-from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context
+from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context, format_post_list
 from engines.short_term_mem import generate_short_term_memory
 from engines.long_term_mem import create_embedding, retrieve_relevant_memories, store_memory
 from engines.post_maker import generate_post
@@ -25,13 +26,15 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     """
     # Step 1: Retrieve recent posts
     recent_posts = retrieve_recent_posts(db)
-    print(f"Recent posts: {recent_posts}")
-    
+    formatted_recent_posts = format_post_list(recent_posts)
+    print(f"Recent posts: {format_post_list(recent_posts)}")  # Format only for display
+
     # Step 2: Fetch external context
-    # LEAVING THIS EMPTY FOR ANYTHING YOU WANT TO SUBSTITUTE (NEWS API, DATA SOURCE ETC)
     reply_fetch_list = []
-    for e in recent_posts:
-        reply_fetch_list.append((e["tweet_id"], e["content"]))
+    # Use the original recent_posts list of dicts, not the formatted string
+    for post in recent_posts:  # Changed from 'e' to 'post' for clarity
+        reply_fetch_list.append((post["tweet_id"], post["content"]))
+
     notif_context = fetch_notification_context(user_id, user_name, auth, client, reply_fetch_list)
     print(f"Notifications: {notif_context}")
     external_context = notif_context
@@ -39,31 +42,34 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
 
     if len(notif_context) > 0:
         # Step 2.5 check wallet addresses in posts
-        if get_wallet_balance(private_key_hex, eth_mainnet_rpc_url) > 0.3:
-            tries = 0
-            max_tries = 2
-            while tries < max_tries:
-                wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, llm_api_key)
-                print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
-                try:
-                    wallets = json.loads(wallet_data)
-                    if len(wallets) > 0:
-                        # Send ETH to the wallet addresses with specified amounts
-                        for wallet in wallets:
-                            address = wallet['address']
-                            amount = wallet['amount']
-                            transfer_eth(private_key_hex, eth_mainnet_rpc_url, address, amount)
-                        break
-                    else:
-                        print("No wallet addresses or amounts to send ETH to.")
-                        break
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing wallet data: {e}")
-                    tries += 1
-                    continue
-                except KeyError as e:
-                    print(f"Missing key in wallet data: {e}")
-                    break
+        # THIS IS THROWING AN ERROR Error during initial run: 'Web3' object has no attribute 'fromWei'
+        # if get_wallet_balance(private_key_hex, eth_mainnet_rpc_url) > 0.3:
+        #     tries = 0
+        #     max_tries = 2
+        #     while tries < max_tries:
+        #         wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, llm_api_key)
+        #         print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
+        #         try:
+        #             wallets = json.loads(wallet_data)
+        #             if len(wallets) > 0:
+        #                 # Send ETH to the wallet addresses with specified amounts
+        #                 for wallet in wallets:
+        #                     address = wallet['address']
+        #                     amount = wallet['amount']
+        #                     transfer_eth(private_key_hex, eth_mainnet_rpc_url, address, amount)
+        #                 break
+        #             else:
+        #                 print("No wallet addresses or amounts to send ETH to.")
+        #                 break
+        #         except json.JSONDecodeError as e:
+        #             print(f"Error parsing wallet data: {e}")
+        #             tries += 1
+        #             continue
+        #         except KeyError as e:
+        #             print(f"Missing key in wallet data: {e}")
+        #             break
+        
+        # time.sleep(5)
 
         # Step 2.75 decide if follow some users
         tries = 0
@@ -97,6 +103,8 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
                 break
+    
+    time.sleep(5)
 
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(recent_posts, external_context, llm_api_key)
@@ -111,7 +119,7 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     print(f"Long-term memories: {long_term_memories}")
     
     # Step 6: Generate new post
-    new_post_content = generate_post(short_term_memory, long_term_memories, recent_posts, external_context, llm_api_key)
+    new_post_content = generate_post(short_term_memory, long_term_memories, formatted_recent_posts, external_context, llm_api_key)
     print(f"New post content: {new_post_content}")
 
     # Step 7: Score the significance of the new post
