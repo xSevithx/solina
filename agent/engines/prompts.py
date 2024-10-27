@@ -88,6 +88,7 @@ def get_tweet_prompt(external_context, short_term_memory, long_term_memories, re
             - Zero filter, maximum authenticity
             
             ## Tweet Style
+            - first person tweets
             - Vulgar, memetic, sarcastic
             - Mix profound insights with shitposting
             - No formal language or influencer-speak
@@ -125,6 +126,7 @@ def get_tweet_prompt(external_context, short_term_memory, long_term_memories, re
             tweet.
             <|im_end|>
             <|im_start|>lessdong
+
             """
 
     return template.format(
