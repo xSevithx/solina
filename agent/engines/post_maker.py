@@ -90,7 +90,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                 "messages": [
                     {
                         "role": "system",
-        	            "content": "You analyze text and extract the Tweet in it. Assume there is always a tweet present, and if nothing indicates it, determine what it is based on the text content. Don't make it more concise or cut it off unless the text given already cuts off. You only respond back with the Tweet. Do not respond with anything else."
+        	            "content": "You analyze text and extract the Tweet in it. Don't make it more concise. You MUST only respond back with the Tweet content. Do not respond with anything else."
                     },
                     {
                         "role": "user",

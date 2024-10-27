@@ -12,7 +12,7 @@ def get_wallet_balance(private_key, eth_mainnet_rpc_url):
 
     # Retrieve and print the balance of the account in Ether
     balance_wei = w3.eth.get_balance(public_address)
-    balance_ether = w3.fromWei(balance_wei, 'ether')
+    balance_ether = w3.from_wei(balance_wei, 'ether')
 
     print(f"Agent wallet balance is {balance_ether} ETH now.\n")
     return balance_ether

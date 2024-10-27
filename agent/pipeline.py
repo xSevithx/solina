@@ -43,33 +43,33 @@ def run_pipeline(db: Session, user_id, user_name, auth, client, private_key_hex:
     if len(notif_context) > 0:
         # Step 2.5 check wallet addresses in posts
         # THIS IS THROWING AN ERROR Error during initial run: 'Web3' object has no attribute 'fromWei'
-        # if get_wallet_balance(private_key_hex, eth_mainnet_rpc_url) > 0.3:
-        #     tries = 0
-        #     max_tries = 2
-        #     while tries < max_tries:
-        #         wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, llm_api_key)
-        #         print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
-        #         try:
-        #             wallets = json.loads(wallet_data)
-        #             if len(wallets) > 0:
-        #                 # Send ETH to the wallet addresses with specified amounts
-        #                 for wallet in wallets:
-        #                     address = wallet['address']
-        #                     amount = wallet['amount']
-        #                     transfer_eth(private_key_hex, eth_mainnet_rpc_url, address, amount)
-        #                 break
-        #             else:
-        #                 print("No wallet addresses or amounts to send ETH to.")
-        #                 break
-        #         except json.JSONDecodeError as e:
-        #             print(f"Error parsing wallet data: {e}")
-        #             tries += 1
-        #             continue
-        #         except KeyError as e:
-        #             print(f"Missing key in wallet data: {e}")
-        #             break
+        if get_wallet_balance(private_key_hex, eth_mainnet_rpc_url) > 0.3:
+            tries = 0
+            max_tries = 2
+            while tries < max_tries:
+                wallet_data = wallet_address_in_post(notif_context, private_key_hex, eth_mainnet_rpc_url, llm_api_key)
+                print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
+                try:
+                    wallets = json.loads(wallet_data)
+                    if len(wallets) > 0:
+                        # Send ETH to the wallet addresses with specified amounts
+                        for wallet in wallets:
+                            address = wallet['address']
+                            amount = wallet['amount']
+                            transfer_eth(private_key_hex, eth_mainnet_rpc_url, address, amount)
+                        break
+                    else:
+                        print("No wallet addresses or amounts to send ETH to.")
+                        break
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing wallet data: {e}")
+                    tries += 1
+                    continue
+                except KeyError as e:
+                    print(f"Missing key in wallet data: {e}")
+                    break
         
-        # time.sleep(5)
+        time.sleep(5)
 
         # Step 2.75 decide if follow some users
         tries = 0
