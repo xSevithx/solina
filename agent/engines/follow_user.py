@@ -77,7 +77,6 @@ def decide_to_follow_users(posts, openrouter_api_key: str):
     )
 
     if response.status_code == 200:
-        print(f"Decisions from Posts: {response.json()}")
         return response.json()["choices"][0]["message"]["content"]
     else:
         raise Exception(f"Error generating decision: {response.text}")

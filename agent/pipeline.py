@@ -51,12 +51,14 @@ def run_pipeline(
     for e in recent_posts:
         reply_fetch_list.append((e["tweet_id"], e["content"]))
     notif_context = fetch_notification_context(account, reply_fetch_list)
-    print(f"Notifications: {notif_context}")
+    print(f"Notifications: {notif_context}\n")
     external_context = notif_context
 
     if len(notif_context) > 0:
         # Step 2.5 check wallet addresses in posts
-        if get_wallet_balance(private_key_hex, eth_mainnet_rpc_url) > 0.3:
+        balance_ether = get_wallet_balance(private_key_hex, eth_mainnet_rpc_url)
+        print(f"Agent wallet balance is {balance_ether} ETH now.\n")
+        if balance_ether > 0.3:
             tries = 0
             max_tries = 2
             while tries < max_tries:
@@ -106,7 +108,7 @@ def run_pipeline(
                             )
                         else:
                             print(
-                                f"Score {score} for user {username} is below or equal to 0.97. Not following."
+                                f"Score {score} for user {username} is below or equal to 0.99. Not following."
                             )
                     break
                 else:

@@ -77,76 +77,193 @@ def fetch_external_context(api_key: str, query: str) -> List[str]:
         return [item["title"] for item in news_items[:5]]
     return []
 
+def parse_tweet_data(tweet_data):
+    try:
+        all_tweets_info = []
+        entries = tweet_data['data']['home']['home_timeline_urt']['instructions'][0]['entries']
+        
+        for entry in entries:
+            # Extract entry ID (format is usually "tweet-123456789")
+            entry_id = entry.get('entryId', '')
+            # Clean the entry_id to get just the number
+            tweet_id = entry_id.replace('tweet-', '') if entry_id.startswith('tweet-') else None
+            
+            # Skip if not a tweet (like promoted content)
+            if 'itemContent' not in entry.get('content', {}) or \
+               'tweet_results' not in entry.get('content', {}).get('itemContent', {}):
+                continue
+                
+            # Extract tweet information
+            tweet_info = entry['content']['itemContent']['tweet_results'].get('result')
+            if not tweet_info:
+                continue
+                
+            try:
+                # Get user information
+                user_info = tweet_info['core']['user_results']['result']['legacy']
+                
+                # Get tweet details
+                tweet_details = tweet_info['legacy']
+                
+                # Create a readable format
+                readable_format = {
+                    "Tweet ID": tweet_id or tweet_details.get('id_str'),  # Use entry_id or fallback to id_str
+                    "Entry ID": entry_id,  # Original entry ID
+                    "Tweet Information": {
+                        "text": tweet_details['full_text'],
+                        "created_at": tweet_details['created_at'],
+                        "likes": tweet_details['favorite_count'],
+                        "retweets": tweet_details['retweet_count'],
+                        "replies": tweet_details['reply_count'],
+                        "language": tweet_details['lang'],
+                        "tweet_id": tweet_details['id_str']
+                    },
+                    "Author Information": {
+                        "name": user_info['name'],
+                        "username": user_info['screen_name'],
+                        "followers": user_info['followers_count'],
+                        "following": user_info['friends_count'],
+                        "account_created": user_info['created_at'],
+                        "profile_image": user_info['profile_image_url_https']
+                    },
+                    "Tweet Metrics": {
+                        "views": tweet_info.get('views', {}).get('count', '0'),
+                        "bookmarks": tweet_details.get('bookmark_count', 0)
+                    }
+                }
+                if tweet_details['favorite_count'] > 20 and user_info['followers_count'] > 300 and tweet_details['reply_count'] > 3:
+                    all_tweets_info.append(readable_format)
+            except KeyError as e:
+                continue
+                
+        return all_tweets_info
+            
+    except KeyError as e:
+        return f"Error parsing data: {e}"
 
-def get_replies(account: Account, tweet_id):
-    scraper = Scraper(account.session.cookies)
-    res = scraper.tweets_details([tweet_id])
-    return res[0]
+def get_root_tweet_id(tweets, start_id):
+    """Find the root tweet ID of a conversation."""
+    current_id = start_id
+    while True:
+        tweet = tweets.get(str(current_id))
+        if not tweet:
+            return current_id
+        parent_id = tweet.get('in_reply_to_status_id_str')
+        if not parent_id or parent_id not in tweets:
+            return current_id
+        current_id = parent_id
 
+def format_conversation_for_llm(data, tweet_id):
+    """Convert a conversation tree into LLM-friendly format."""
+    tweets = data['globalObjects']['tweets']
+    users = data['globalObjects']['users']
+    
+    def get_conversation_chain(current_id, processed_ids=None):
+        """Get all tweets in a conversation in a flat structure."""
+        if processed_ids is None:
+            processed_ids = set()
+            
+        if not current_id or current_id in processed_ids:
+            return []
+            
+        processed_ids.add(current_id)
+        current_tweet = tweets.get(str(current_id))
+        if not current_tweet:
+            return []
+            
+        # Get user info
+        user = users.get(str(current_tweet['user_id']))
+        username = f"@{user['screen_name']}" if user else "Unknown User"
+        
+        # Format current tweet
+        chain = [{
+            'id': current_id,
+            'username': username,
+            'text': current_tweet['full_text'],
+            'reply_to': current_tweet.get('in_reply_to_status_id_str')
+        }]
+        
+        # Get replies to this tweet
+        for potential_reply_id, potential_reply in tweets.items():
+            if potential_reply.get('in_reply_to_status_id_str') == current_id:
+                chain.extend(get_conversation_chain(potential_reply_id, processed_ids))
+        
+        return chain
 
-# def get_mentions(auth, user_id):
-#     url = f"https://api.twitter.com/2/users/{user_id}/mentions"
-#     params = {
-#         "tweet.fields": "author_id,created_at,text",
-#         "expansions": "author_id",  # Expand author_id to get user objects
-#         "user.fields": "username,name",  # Specify which user fields to include
-#         "max_results": 10,
-#     }
+    # Get the full conversation
+    root_id = get_root_tweet_id(tweets, tweet_id)
+    conversation = get_conversation_chain(root_id)
+    
+    if not conversation:
+        return "No conversation found."
 
-#     response = requests.get(url, params=params, auth=auth)
-#     if response.status_code == 200:
-#         return response.json()
-#     else:
-#         print(f"Error getting mentions: {response.status_code} - {response.text}")
-#         return None
+    # Format the conversation for LLM
+    output = ["New reply to my original conversation thread:"]
+    
+    for i, tweet in enumerate(conversation, 1):
+        # Add reply context
+        if tweet['reply_to']:
+            reply_context = f"[Replying to {next((t['username'] for t in conversation if t['id'] == tweet['reply_to']), 'unknown')}]"
+        else:
+            reply_context = "[Original tweet]"
+            
+        # Only show ID for the latest tweet in our data
+        # id_info = f" (Tweet ID: {tweet['id']})" if tweet['id'] == tweet_id else ""
+        
+        output.append(f"{i}. {tweet['username']} {reply_context}:")
+        output.append(f"   \"{tweet['text']}\"")
+        output.append("")  # Empty line for readability
+    
+    return "\n".join(output)
+
+def find_all_conversations(data):
+    """Find and format all conversations in the data."""
+    tweets = data['globalObjects']['tweets']
+    processed_roots = set()
+    conversations = []
+
+    # Sort tweets by creation time (newest first)
+    sorted_tweets = sorted(
+        tweets.items(),
+        key=lambda x: x[1]['created_at'],
+        reverse=True
+    )
+
+    for tweet_id, _ in sorted_tweets:
+        # Get the root tweet of this conversation
+        root_id = get_root_tweet_id(tweets, tweet_id)
+        
+        # Only process if we haven't seen this conversation before
+        if root_id not in processed_roots:
+            processed_roots.add(root_id)
+            conversation = format_conversation_for_llm(data, tweet_id)
+            if conversation != "No conversation found.":
+                conversations.append(conversation)
+
+    if not conversations:
+        return "No conversations found."
+    
+    return "\n\n".join(conversations)
 
 
 def get_timeline(account: Account) -> List[str]:
-    # replies = client.get_home_timeline(max_results=10)
-    # if replies.data:
-    #     timeline_tweets = []
-    #     for reply in replies.data:
-    #         # Access and print the text and author_id of each reply
-    #         print(f"tweet id is {reply.id}, text is {reply.text}")
-    #         timeline_tweets.append(f"Tweet on my timeline: {reply.text}")
-    #     return
-    # else:
-    #     print("No tweet found on timeline.")
-    #     return []
     timeline = account.home_latest_timeline(10)
-    return timeline
+    
+    tweets_info = parse_tweet_data(timeline[0])
+    filtered_timeline = []
+    for t in tweets_info:
+        filtered_timeline.append(f'New post on my timeline: @{t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
+        # print(f'Tweet ID: {t["Tweet ID"]}, on my timeline: {t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
+    return filtered_timeline
 
 
 def fetch_notification_context(account: Account, tweet_id_list) -> List[str]:
     context = []
+    
+    timeline = get_timeline(account)
+    context.extend(timeline)
 
-    for tweet_id, tweet_content in tweet_id_list:
-        replies = get_replies(account, tweet_id)
-        if replies and "data" in replies:
-            users = {
-                user["id"]: user
-                for user in replies.get("includes", {}).get("users", [])
-            }
-            for tweet in replies["data"]:
-                user = users.get(tweet["author_id"], {})
-                author_username = user.get("username", "Unknown")
-                context.append(
-                    f"@{author_username} replied to me: {tweet['text']} in response to my post: {tweet_content} \n"
-                )
-
-    # mentions = get_mentions(auth, user_id)
-
-    timeline_tweets = get_timeline(account)
-    if timeline_tweets:
-        context.extend(timeline_tweets)
-
-    # if mentions and 'data' in mentions:
-    #     # Create a mapping of user IDs to user information
-    #     users = {user['id']: user for user in mentions.get('includes', {}).get('users', [])}
-    #     for tweet in mentions['data']:
-    #         author_id = tweet['author_id']
-    #         user = users.get(author_id, {})
-    #         username = user.get('username', 'Unknown')
-    #         context.append(f"@{username} mentioned you: {tweet['text']}\n")
+    notifications = account.notifications()
+    context.append(find_all_conversations(notifications))
 
     return context

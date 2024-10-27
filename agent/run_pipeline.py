@@ -84,12 +84,14 @@ def main():
     password = os.environ.get("X_PASSWORD")
     username = os.environ.get("X_USERNAME")
     auth_tokens = json.loads(os.environ.get("X_AUTH_TOKENS"))
-    account = Account(ccokies=auth_tokens)
+    account = Account(cookies=auth_tokens)
 
     private_key_hex, eth_address = generate_eth_account()
     print(f"generated agent exclusively-owned wallet: {eth_address}")
     # TODO: Agent need to know what's its wallet
-    send_post(account, eth_address)
+
+    data = send_post(account, f'My wallet is {eth_address}')
+    print(data)
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
