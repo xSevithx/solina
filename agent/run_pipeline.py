@@ -13,6 +13,7 @@ from requests_oauthlib import OAuth1
 from tweepy import Client, Paginator, TweepyException
 from engines.post_sender import send_post
 from twitter.account import Account
+import json
 
 
 def generate_eth_account():
@@ -82,7 +83,8 @@ def main():
     email = os.environ.get("X_EMAIL")
     password = os.environ.get("X_PASSWORD")
     username = os.environ.get("X_USERNAME")
-    account = Account(email, username, password)
+    auth_tokens = json.loads(os.environ.get("X_AUTH_TOKENS"))
+    account = Account(ccokies=auth_tokens)
 
     private_key_hex, eth_address = generate_eth_account()
     print(f"generated agent exclusively-owned wallet: {eth_address}")
