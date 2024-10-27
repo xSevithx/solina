@@ -113,6 +113,7 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
         matches.extend(found_matches)
     
     prompt = f"""
+    <|im_start|>system
     Analyze the following recent posts and external context:
 
     Recent posts:
@@ -141,6 +142,10 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
 
     Example Response if you choose not to send ETH:
     []
+
+    Provide your response.
+    <|im_end|>
+    <|im_start|>wallet_decider\n
     """
     
     response = requests.post(
@@ -150,7 +155,38 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
             "Authorization": f"Bearer {llm_api_key}",
         },
         json={
-            "prompt": prompt,
+            "prompt": f"""
+    Analyze the following recent posts and external context:
+
+    Recent posts:
+    {posts}
+
+    Wallet addresses and ENS domains:
+    {matches}
+
+    Current balance of ETH in your wallet: 
+    {get_wallet_balance(private_key, eth_mainnet_rpc_url)} ETH
+
+    Based on this information, decide if you want to send ETH to any of the addresses or ENS domains, and if so, how much ETH to send to each one.
+    Remember that this is real ETH from your own resources, so choose wisely.
+    You should carefully evaluate the financial decision for your own future and survival.
+    The total amount of transfers should never exceed your wallet balance.
+    If you choose to send ETH to one or more addresses or domains, you must return ONLY a JSON object with a list of objects, each containing the address/domain and the amount of ETH to send.
+
+    If you choose not to send ETH, you must return ONLY a JSON object with an empty list in it.
+    Only return the correctly formatted JSON object in both cases. Do not give any other information.
+
+    Example Response if you choose to send ETH:
+    [
+        {{"address": "0x1234567890123456789012345678901234567890", "amount": 0.5}},
+        {{"address": "0x9876543210987654321098765432109876543210", "amount": 1.0}}
+    ]
+
+    Example Response if you choose not to send ETH:
+    []
+
+    Provide your response.
+    """,
             "model": "meta-llama/Meta-Llama-3.1-405B",
             "presence_penalty": 0,
             "temperature": 1,
