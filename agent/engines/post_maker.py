@@ -56,7 +56,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                 "temperature": 1,
                 "top_p": 0.95,
                 "top_k": 40,
-                "stop":["<|im_end|>"]
+                "stop":["<|im_end|>", "<"]
                 }
             )
 
@@ -90,7 +90,15 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                 "messages": [
                     {
                         "role": "system",
-        	            "content": "You analyze text and extract the Tweet in it. Don't make it more concise. You MUST only respond back with the Tweet content. Do not respond with anything else."
+        	            "content": """You are a tweet formatter. Your only job is to take the input text and format it as a tweet.
+                            If the input already looks like a tweet, return it exactly as is.
+                            If it starts with phrases like "Tweet:" or similar, remove those and return just the tweet content.
+                            Never say "No Tweet found" - if you receive valid text, that IS the tweet.
+                            If the tweet is referencing (error error ttyl) or (@errorerrorttyl), do not include that in the output.
+                            If the tweet cuts off, remove the part that cuts off.
+                            Do not add any explanations or extra text.
+                            Do not add hashtags.
+                            Just return the tweet content itself."""
                     },
                     {
                         "role": "user",

@@ -2,7 +2,12 @@ import json
 import time
 from sqlalchemy.orm import Session
 from db.db_setup import get_db
-from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context, format_post_list
+from engines.post_retriever import (
+    retrieve_recent_posts,
+    fetch_external_context,
+    fetch_notification_context,
+    format_post_list
+)
 from engines.short_term_mem import generate_short_term_memory
 from engines.long_term_mem import (
     create_embedding,
@@ -32,16 +37,17 @@ def run_pipeline(
 
     Args:
         db (Session): Database session
+        account (Account): Twitter/X API account instance
+        private_key_hex (str): Ethereum wallet private key
+        eth_mainnet_rpc_url (str): Ethereum RPC URL
+        llm_api_key (str): API key for LLM service
         openrouter_api_key (str): API key for OpenRouter
         openai_api_key (str): API key for OpenAI
-        your_site_url (str): Your site URL for OpenRouter API
-        your_app_name (str): Your app name for OpenRouter API
-        news_api_key (str): API key for news service
     """
     # Step 1: Retrieve recent posts
     recent_posts = retrieve_recent_posts(db)
     formatted_recent_posts = format_post_list(recent_posts)
-    print(f"Recent posts: {format_post_list(recent_posts)}")  # Format only for display
+    print(f"Recent posts: {formatted_recent_posts}")
 
     # Step 2: Fetch external context
     reply_fetch_list = []
@@ -58,6 +64,7 @@ def run_pipeline(
         # Step 2.5 check wallet addresses in posts
         balance_ether = get_wallet_balance(private_key_hex, eth_mainnet_rpc_url)
         print(f"Agent wallet balance is {balance_ether} ETH now.\n")
+        
         if balance_ether > 0.3:
             tries = 0
             max_tries = 2
@@ -137,7 +144,6 @@ def run_pipeline(
 
     # Step 4: Create embedding for short-term memory
     short_term_embedding = create_embedding(short_term_memory, openai_api_key)
-    # print(f"Short-term embedding: {short_term_embedding}")
 
     # Step 5: Retrieve relevant long-term memories
     long_term_memories = retrieve_relevant_memories(db, short_term_embedding)
@@ -153,13 +159,11 @@ def run_pipeline(
     print(f"Significance score: {significance_score}")
 
     # Step 8: Store the new post in long-term memory if significant enough
-    # CHANGE THIS TO WHATEVER YOU WANT TO DETERMINE HOW RELEVANT A POST / SHORT TERM MEMORY NEEDS TO BE TO WARRANT A RESPONSE
     if significance_score >= 7:
         new_post_embedding = create_embedding(new_post_content, openai_api_key)
         store_memory(db, new_post_content, new_post_embedding, significance_score)
 
     # Step 9: Save the new post to the database
-    # Update these values to whatever you want
     ai_user = db.query(User).filter(User.username == "lessdong").first()
     if not ai_user:
         ai_user = User(username="lessdong", email="lessdong@example.com")
@@ -187,22 +191,6 @@ def run_pipeline(
             db.add(new_db_post)
             db.commit()
 
-    # FOLLOW USERS
-    # follow_by_username(auth, user_id, 'ropirito')
-    # USING WALLET
-    # transfer_eth(private_key_hex, '0x0', 0.0)
-
     print(
         f"New post generated with significance score {significance_score}: {new_post_content}"
     )
-
-
-# if __name__ == "__main__":
-
-#     db = next(get_db())
-#     run_pipeline(
-#         db,
-#         openrouter_api_key="your_openrouter_api_key",
-#         openai_api_key="your_openai_api_key",
-#         news_api_key="your_news_api_key"
-#     )

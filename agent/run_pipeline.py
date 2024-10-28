@@ -17,6 +17,7 @@ import json
 
 
 def generate_eth_account():
+    """Generate a new Ethereum account with private key and address."""
     # Securely generate a random number to use as a seed
     random_seed = secrets.token_bytes(32)
 
@@ -73,25 +74,20 @@ def main():
         "llm_api_key": os.getenv("HYPERBOLIC_API_KEY"),
         "openai_api_key": os.getenv("OPENAI_API_KEY"),
         "openrouter_api_key": os.getenv("OPENROUTER_API_KEY"),
-        # 'news_api_key': os.getenv("NEWS_API_KEY")
     }
 
     # Accessing environment variables
-    user_id = os.environ.get("USER_ID")
-    user_name = os.environ.get("USER_NAME")
     eth_mainnet_rpc_url = os.environ.get("ETH_MAINNET_RPC_URL")
-    email = os.environ.get("X_EMAIL")
-    password = os.environ.get("X_PASSWORD")
-    username = os.environ.get("X_USERNAME")
     auth_tokens = json.loads(os.environ.get("X_AUTH_TOKENS"))
     account = Account(cookies=auth_tokens)
 
+    # Generate Ethereum account
     private_key_hex, eth_address = generate_eth_account()
     print(f"generated agent exclusively-owned wallet: {eth_address}")
-    # TODO: Agent need to know what's its wallet
-
-    data = send_post(account, f'My wallet is {eth_address}')
-    print(f"sent wallet tweet, result: {data}")
+    
+    # Announce wallet address using new Account-based approach
+    tweet_id = send_post(account, f'My wallet is {eth_address}')
+    print(f"Wallet announcement tweet ID: {tweet_id}")
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")

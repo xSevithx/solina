@@ -1,11 +1,3 @@
-# Post Retrieval
-# Objective: Retrieves all recent posts that would appear on timeline
-
-# Outputs:
-# Timeline posts used by short-term memory
-
-# THIS IS WHERE WE WANT TO IMPLEMENT TWITTER POST RETRIEVAL AKA TIMELINE OR SEARCHES ETC WAHTEVER YOU WANT
-# YOU CAN REMOVE OR REPLACE ALL THE CODE BELOW WITH YOUR OWN TWITTER API CODE
 import requests
 from typing import List, Dict
 from sqlalchemy.orm import Session
@@ -109,7 +101,6 @@ def fetch_external_context(api_key: str, query: str) -> List[str]:
     Returns:
         List[str]: List of relevant news headlines or context
     """
-    # This is a placeholder implementation. Replace with actual API call.
     url = f"https://newsapi.org/v2/everything?q={query}&apiKey={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -117,38 +108,32 @@ def fetch_external_context(api_key: str, query: str) -> List[str]:
         return [item["title"] for item in news_items[:5]]
     return []
 
+
 def parse_tweet_data(tweet_data):
+    """Parse tweet data from the X API response."""
     try:
         all_tweets_info = []
         entries = tweet_data['data']['home']['home_timeline_urt']['instructions'][0]['entries']
         
         for entry in entries:
-            # Extract entry ID (format is usually "tweet-123456789")
             entry_id = entry.get('entryId', '')
-            # Clean the entry_id to get just the number
             tweet_id = entry_id.replace('tweet-', '') if entry_id.startswith('tweet-') else None
             
-            # Skip if not a tweet (like promoted content)
             if 'itemContent' not in entry.get('content', {}) or \
                'tweet_results' not in entry.get('content', {}).get('itemContent', {}):
                 continue
                 
-            # Extract tweet information
             tweet_info = entry['content']['itemContent']['tweet_results'].get('result')
             if not tweet_info:
                 continue
                 
             try:
-                # Get user information
                 user_info = tweet_info['core']['user_results']['result']['legacy']
-                
-                # Get tweet details
                 tweet_details = tweet_info['legacy']
                 
-                # Create a readable format
                 readable_format = {
-                    "Tweet ID": tweet_id or tweet_details.get('id_str'),  # Use entry_id or fallback to id_str
-                    "Entry ID": entry_id,  # Original entry ID
+                    "Tweet ID": tweet_id or tweet_details.get('id_str'),
+                    "Entry ID": entry_id,
                     "Tweet Information": {
                         "text": tweet_details['full_text'],
                         "created_at": tweet_details['created_at'],
@@ -173,13 +158,14 @@ def parse_tweet_data(tweet_data):
                 }
                 if tweet_details['favorite_count'] > 20 and user_info['followers_count'] > 300 and tweet_details['reply_count'] > 3:
                     all_tweets_info.append(readable_format)
-            except KeyError as e:
+            except KeyError:
                 continue
                 
         return all_tweets_info
             
     except KeyError as e:
         return f"Error parsing data: {e}"
+
 
 def get_root_tweet_id(tweets, start_id):
     """Find the root tweet ID of a conversation."""
@@ -193,13 +179,13 @@ def get_root_tweet_id(tweets, start_id):
             return current_id
         current_id = parent_id
 
+
 def format_conversation_for_llm(data, tweet_id):
     """Convert a conversation tree into LLM-friendly format."""
     tweets = data['globalObjects']['tweets']
     users = data['globalObjects']['users']
     
     def get_conversation_chain(current_id, processed_ids=None):
-        """Get all tweets in a conversation in a flat structure."""
         if processed_ids is None:
             processed_ids = set()
             
@@ -211,11 +197,9 @@ def format_conversation_for_llm(data, tweet_id):
         if not current_tweet:
             return []
             
-        # Get user info
         user = users.get(str(current_tweet['user_id']))
         username = f"@{user['screen_name']}" if user else "Unknown User"
         
-        # Format current tweet
         chain = [{
             'id': current_id,
             'username': username,
@@ -223,14 +207,12 @@ def format_conversation_for_llm(data, tweet_id):
             'reply_to': current_tweet.get('in_reply_to_status_id_str')
         }]
         
-        # Get replies to this tweet
         for potential_reply_id, potential_reply in tweets.items():
             if potential_reply.get('in_reply_to_status_id_str') == current_id:
                 chain.extend(get_conversation_chain(potential_reply_id, processed_ids))
         
         return chain
 
-    # Get the full conversation
     root_id = get_root_tweet_id(tweets, tweet_id)
     conversation = get_conversation_chain(root_id)
     
@@ -241,20 +223,15 @@ def format_conversation_for_llm(data, tweet_id):
     output = ["New reply to my original conversation thread or a Mention from somebody:"]
     
     for i, tweet in enumerate(conversation, 1):
-        # Add reply context
-        if tweet['reply_to']:
-            reply_context = f"[Replying to {next((t['username'] for t in conversation if t['id'] == tweet['reply_to']), 'unknown')}]"
-        else:
-            reply_context = "[Original tweet]"
+        reply_context = (f"[Replying to {next((t['username'] for t in conversation if t['id'] == tweet['reply_to']), 'unknown')}]"
+                        if tweet['reply_to'] else "[Original tweet]")
             
-        # Only show ID for the latest tweet in our data
-        # id_info = f" (Tweet ID: {tweet['id']})" if tweet['id'] == tweet_id else ""
-        
         output.append(f"{i}. {tweet['username']} {reply_context}:")
         output.append(f"   \"{tweet['text']}\"")
-        output.append("")  # Empty line for readability
+        output.append("")
     
     return "\n".join(output)
+
 
 def find_all_conversations(data):
     """Find and format all conversations in the data."""
@@ -262,7 +239,6 @@ def find_all_conversations(data):
     processed_roots = set()
     conversations = []
 
-    # Sort tweets by creation time (newest first)
     sorted_tweets = sorted(
         tweets.items(),
         key=lambda x: x[1]['created_at'],
@@ -270,10 +246,8 @@ def find_all_conversations(data):
     )
 
     for tweet_id, _ in sorted_tweets:
-        # Get the root tweet of this conversation
         root_id = get_root_tweet_id(tweets, tweet_id)
         
-        # Only process if we haven't seen this conversation before
         if root_id not in processed_roots:
             processed_roots.add(root_id)
             conversation = format_conversation_for_llm(data, tweet_id)
@@ -287,7 +261,8 @@ def find_all_conversations(data):
 
 
 def get_timeline(account: Account) -> List[str]:
-    timeline = account.home_latest_timeline(20)
+    """Get timeline using the new Account-based approach."""
+    timeline = account.home_latest_timeline(10)
     
     tweets_info = parse_tweet_data(timeline[0])
     filtered_timeline = []
@@ -297,12 +272,13 @@ def get_timeline(account: Account) -> List[str]:
     return filtered_timeline
 
 
-def fetch_notification_context(account: Account, tweet_id_list) -> List[str]:
+def fetch_notification_context(account: Account, tweet_id_list) -> str:
+    """Fetch notification context using the new Account-based approach."""
     context = []
     
+    # Get timeline posts
     timeline = get_timeline(account)
     context.extend(timeline)
-
     notifications = account.notifications()
     context.append(find_all_conversations(notifications))
 
