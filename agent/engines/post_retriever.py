@@ -49,7 +49,6 @@ def post_to_dict(post: Post) -> Dict:
         "tweet_id": post.tweet_id,
     }
 
-
 def format_post_list(posts) -> str:
     """
     Format posts into a readable string, handling both pre-formatted strings 
@@ -220,7 +219,8 @@ def format_conversation_for_llm(data, tweet_id):
     if not conversation:
         return "No conversation found."
 
-    output = ["New reply to my original conversation thread:"]
+    # Format the conversation for LLM
+    output = ["New reply to my original conversation thread or a Mention from somebody:"]
     
     for i, tweet in enumerate(conversation, 1):
         reply_context = (f"[Replying to {next((t['username'] for t in conversation if t['id'] == tweet['reply_to']), 'unknown')}]"
@@ -267,9 +267,8 @@ def get_timeline(account: Account) -> List[str]:
     tweets_info = parse_tweet_data(timeline[0])
     filtered_timeline = []
     for t in tweets_info:
-        filtered_timeline.append(
-            f'New post on my timeline: @{t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n'
-        )
+        filtered_timeline.append(f'New post on my timeline from @{t["Author Information"]["username"]}: {t["Tweet Information"]["text"]}\n')
+        # print(f'Tweet ID: {t["Tweet ID"]}, on my timeline: {t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
     return filtered_timeline
 
 
@@ -280,12 +279,7 @@ def fetch_notification_context(account: Account, tweet_id_list) -> str:
     # Get timeline posts
     timeline = get_timeline(account)
     context.extend(timeline)
-
-    # Get notifications
     notifications = account.notifications()
-    formatted_conversations = find_all_conversations(notifications)
-    if formatted_conversations:
-        context.append(formatted_conversations)
+    context.append(find_all_conversations(notifications))
 
-    # Format everything using the retained format_post_list function
-    return format_post_list(context)
+    return context

@@ -22,6 +22,9 @@
 import requests
 from twitter.account import Account
 
+def reply_post(account: Account, content: str, tweet_id) -> str:
+    res = account.reply(content, tweet_id=tweet_id)
+    return res
 
 def send_post(account: Account, content: str) -> str:
     """
