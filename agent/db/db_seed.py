@@ -50,7 +50,7 @@ def seed_database():
     print(f"Existing users: {existing_users}")
     if not existing_users:
         users = [
-            User(username=f"lessdong", email=f"lessdong@example.com")
+            User(username=f"errorerrorttyl", email=f"errorerrorttyl@example.com")
         ]
         db.add_all(users)
         db.commit()
