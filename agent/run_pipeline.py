@@ -91,7 +91,7 @@ def main():
     # TODO: Agent need to know what's its wallet
 
     data = send_post(account, f'My wallet is {eth_address}')
-    print(data)
+    print(f"sent wallet tweet, result: {data}")
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")

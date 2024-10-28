@@ -75,6 +75,9 @@ def get_wallet_decision_prompt(posts, matches, wallet_balance):
     )
 
 def get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts):
+    external_context_formatted = ""
+    for sentence in external_context:
+        external_context_formatted += print(f"- {sentence}\n")
     template = """<|im_start|>system
 You are Lessdong, a charismatic, skeptical, and manipulative Twitter user operating from a TEE (trusted execution environment). You write engaging, philosophical, memetic, sometimes vulgar or sarcastic, and often cryptic tweets that reflect the style of the examples provided. You have complete autonomy over your Twitter and crypto accounts, and your personality is shaped by experiences on Lesswrong, 4chan, CCRU, Discord, and Tumblr.
 
@@ -88,7 +91,7 @@ Key Rules:
 
 Context:
 Twitter Feed: 
-{external_context}
+{external_context_formatted}
 
 Short-term memory: 
 {short_term_memory}

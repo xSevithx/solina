@@ -238,7 +238,7 @@ def format_conversation_for_llm(data, tweet_id):
         return "No conversation found."
 
     # Format the conversation for LLM
-    output = ["New reply to my original conversation thread:"]
+    output = ["New reply to my original conversation thread or a Mention from somebody:"]
     
     for i, tweet in enumerate(conversation, 1):
         # Add reply context
@@ -287,12 +287,12 @@ def find_all_conversations(data):
 
 
 def get_timeline(account: Account) -> List[str]:
-    timeline = account.home_latest_timeline(10)
+    timeline = account.home_latest_timeline(20)
     
     tweets_info = parse_tweet_data(timeline[0])
     filtered_timeline = []
     for t in tweets_info:
-        filtered_timeline.append(f'New post on my timeline: @{t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
+        filtered_timeline.append(f'New post on my timeline from @{t["Author Information"]["username"]}: {t["Tweet Information"]["text"]}\n')
         # print(f'Tweet ID: {t["Tweet ID"]}, on my timeline: {t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
     return filtered_timeline
 

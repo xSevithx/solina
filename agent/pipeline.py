@@ -48,7 +48,10 @@ def run_pipeline(
     for e in recent_posts:
         reply_fetch_list.append((e["tweet_id"], e["content"]))
     notif_context = fetch_notification_context(account, reply_fetch_list)
-    print(f"Notifications: {notif_context}\n")
+    # print(f"fetched context tweet ids: {new_ids}\n")
+    print("Notifications:\n")
+    for notif in notif_context:
+        print(f"- {notif}\n")
     external_context = notif_context
 
     if len(notif_context) > 0:
@@ -107,7 +110,7 @@ def run_pipeline(
                             )
                         else:
                             print(
-                                f"Score {score} for user {username} is below or equal to 0.99. Not following."
+                                f"Score {score} for user {username} is below or equal to 0.98. Not following."
                             )
                     break
                 else:
@@ -142,6 +145,7 @@ def run_pipeline(
 
     # Step 6: Generate new post
     new_post_content = generate_post(short_term_memory, long_term_memories, formatted_recent_posts, external_context, llm_api_key)
+    new_post_content = new_post_content.strip('"')
     print(f"New post content: {new_post_content}")
 
     # Step 7: Score the significance of the new post
@@ -163,17 +167,22 @@ def run_pipeline(
         db.commit()
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
-    # Only Bangers! lol
-    if significance_score >= 3:
-        tweet_id = send_post(account, new_post_content)
-        print(tweet_id)
-        if tweet_id:
+    if significance_score >= 5: # Only Bangers! lol
+        res = send_post(account, new_post_content)
+        rest_id = (res.get('data', {})
+                    .get('create_tweet', {})
+                    .get('tweet_results', {})
+                    .get('result', {})
+                    .get('rest_id'))
+
+        if rest_id is not None:
+            print(f"Posted with tweet_id: {rest_id}")
             new_db_post = Post(
                 content=new_post_content,
                 user_id=ai_user.id,
                 username=ai_user.username,
                 type="text",
-                tweet_id=tweet_id,
+                tweet_id=rest_id,
             )
             db.add(new_db_post)
             db.commit()
