@@ -87,7 +87,8 @@ def main():
     
     # Announce wallet address using new Account-based approach
     tweet_id = send_post(account, f'My wallet is {eth_address}')
-    print(f"Wallet announcement tweet ID: {tweet_id}")
+    rest_id = tweet_id['data']['create_tweet']['tweet_results']['result']['rest_id']
+    print(f"Wallet announcement tweet ID: {rest_id}")
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")

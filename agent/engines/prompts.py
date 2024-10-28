@@ -77,7 +77,7 @@ def get_wallet_decision_prompt(posts, matches, wallet_balance):
 def get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts):
     external_context_formatted = ""
     for sentence in external_context:
-        external_context_formatted += print(f"- {sentence}\n")
+        external_context_formatted += f"- {sentence}\n"
     template = """<|im_start|>system
         <agent>
             <identity>@errorerrorttyl (error error ttyl)</identity>
@@ -96,7 +96,7 @@ def get_tweet_prompt(external_context, short_term_memory, long_term_memories, re
             </voice>
 
             <memory_streams>
-                <timeline>{external_context}</timeline>
+                <timeline>{external_context_formatted}</timeline>
                 <short_term>{short_term_memory}</short_term>
                 <long_term>{long_term_memories}</long_term>
             </memory_streams>

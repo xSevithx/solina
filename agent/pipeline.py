@@ -171,7 +171,7 @@ def run_pipeline(
         db.commit()
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
-    if significance_score >= 5: # Only Bangers! lol
+    if significance_score >= 1: # Only Bangers! lol
         res = send_post(account, new_post_content)
         rest_id = (res.get('data', {})
                     .get('create_tweet', {})
