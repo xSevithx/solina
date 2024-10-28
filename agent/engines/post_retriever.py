@@ -263,7 +263,10 @@ def find_all_conversations(data):
 def get_timeline(account: Account) -> List[str]:
     """Get timeline using the new Account-based approach."""
     timeline = account.home_latest_timeline(10)
-    
+
+    if 'errors' in timeline[0]:
+        print(timeline[0])
+
     tweets_info = parse_tweet_data(timeline[0])
     filtered_timeline = []
     for t in tweets_info:
