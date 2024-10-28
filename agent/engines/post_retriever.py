@@ -57,6 +57,46 @@ def post_to_dict(post: Post) -> Dict:
         "tweet_id": post.tweet_id,
     }
 
+def format_post_list(posts) -> str:
+    """
+    Format posts into a readable string, handling both pre-formatted strings 
+    and lists of post dictionaries.
+    
+    Args:
+        posts: Either a string of posts or List[Dict] of post objects
+        
+    Returns:
+        str: Formatted string of posts
+    """
+    # If it's already a string, return it
+    if isinstance(posts, str):
+        return posts
+        
+    # If it's None or empty
+    if not posts:
+        return "No recent posts"
+    
+    # If it's a list of dictionaries
+    if isinstance(posts, list):
+        formatted = []
+        for post in posts:
+            try:
+                # Handle dictionary format
+                if isinstance(post, dict):
+                    content = post.get('content', '')
+                    formatted.append(f"- {content}")
+                # Handle string format
+                elif isinstance(post, str):
+                    formatted.append(f"- {post}")
+            except Exception as e:
+                print(f"Error formatting post: {e}")
+                continue
+        
+        return "\n".join(formatted)
+    
+    # If we can't process it, return as string
+    return str(posts)
+
 
 def fetch_external_context(api_key: str, query: str) -> List[str]:
     """

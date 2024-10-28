@@ -1,11 +1,8 @@
 import json
+import time
 from sqlalchemy.orm import Session
 from db.db_setup import get_db
-from engines.post_retriever import (
-    retrieve_recent_posts,
-    fetch_external_context,
-    fetch_notification_context,
-)
+from engines.post_retriever import retrieve_recent_posts, fetch_external_context, fetch_notification_context, format_post_list
 from engines.short_term_mem import generate_short_term_memory
 from engines.long_term_mem import (
     create_embedding,
@@ -43,10 +40,10 @@ def run_pipeline(
     """
     # Step 1: Retrieve recent posts
     recent_posts = retrieve_recent_posts(db)
-    print(f"Recent posts: {recent_posts}")
+    formatted_recent_posts = format_post_list(recent_posts)
+    print(f"Recent posts: {format_post_list(recent_posts)}")  # Format only for display
 
     # Step 2: Fetch external context
-    # LEAVING THIS EMPTY FOR ANYTHING YOU WANT TO SUBSTITUTE (NEWS API, DATA SOURCE ETC)
     reply_fetch_list = []
     for e in recent_posts:
         reply_fetch_list.append((e["tweet_id"], e["content"]))
@@ -87,6 +84,8 @@ def run_pipeline(
                 except KeyError as e:
                     print(f"Missing key in wallet data: {e}")
                     break
+        
+        time.sleep(5)
 
         # Step 2.75 decide if follow some users
         tries = 0
@@ -124,6 +123,8 @@ def run_pipeline(
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
                 break
+    
+    time.sleep(5)
 
     # Step 3: Generate short-term memory
     short_term_memory = generate_short_term_memory(
@@ -140,13 +141,7 @@ def run_pipeline(
     print(f"Long-term memories: {long_term_memories}")
 
     # Step 6: Generate new post
-    new_post_content = generate_post(
-        short_term_memory,
-        long_term_memories,
-        recent_posts,
-        external_context,
-        llm_api_key,
-    )
+    new_post_content = generate_post(short_term_memory, long_term_memories, formatted_recent_posts, external_context, llm_api_key)
     print(f"New post content: {new_post_content}")
 
     # Step 7: Score the significance of the new post
