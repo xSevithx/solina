@@ -19,7 +19,7 @@ from engines.significance_scorer import score_significance
 from engines.post_sender import send_post, send_post_API
 from engines.wallet_send import transfer_eth, wallet_address_in_post, get_wallet_balance
 from engines.follow_user import follow_by_username, decide_to_follow_users
-from models import Post, User
+from models import Post, User, TweetPost
 from twitter.account import Account
 
 
@@ -56,10 +56,21 @@ def run_pipeline(
     #     reply_fetch_list.append((e["tweet_id"], e["content"]))
     notif_context_tuple = fetch_notification_context(account)
     notif_context_id = [context[1] for context in notif_context_tuple]
+
+    # filter all of the notifications for ones that haven't been seen before
+    existing_tweet_ids = {tweet.tweet_id for tweet in db.query(TweetPost.tweet_id).all()}
+    filtered_notif_context_tuple = [context for context in notif_context_tuple if context[1] not in existing_tweet_ids]
+
+    # add to database every tweet id you have seen
+    for id in notif_context_id:
+        new_tweet_post = TweetPost(tweet_id=id)
+        db.add(new_tweet_post)
+        db.commit()
+
     # print(notif_context_id)
-    notif_context = [context[0] for context in notif_context_tuple]
+    notif_context = [context[0] for context in filtered_notif_context_tuple]
     # print(f"fetched context tweet ids: {new_ids}\n")
-    print("Notifications:\n")
+    print("New Notifications:\n")
     for notif in notif_context_tuple:
         print(f"- {notif[0]}, tweet at https://x.com/user/status/{notif[1]}\n")
     external_context = notif_context
@@ -180,7 +191,18 @@ def run_pipeline(
         res = send_post_API(auth, new_post_content)
         print(f"Posted API with tweet_id: {res}")
 
-        if res == None:
+        if res is not None:
+            print(f"Posted with tweet_id: {res}")
+            new_db_post = Post(
+                content=new_post_content,
+                user_id=ai_user.id,
+                username=ai_user.username,
+                type="text",
+                tweet_id=res,
+            )
+            db.add(new_db_post)
+            db.commit()
+        else:
             res = send_post(account, new_post_content)
             rest_id = (res.get('data', {})
                         .get('create_tweet', {})
