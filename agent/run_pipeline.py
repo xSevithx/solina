@@ -11,7 +11,7 @@ import hashlib
 from eth_keys import keys
 from requests_oauthlib import OAuth1
 from tweepy import Client, Paginator, TweepyException
-from engines.post_sender import send_post
+from engines.post_sender import send_post, send_post_API
 from twitter.account import Account
 import json
 
@@ -93,12 +93,13 @@ def main():
     print(f"generated agent exclusively-owned wallet: {eth_address}")
     
     # Announce wallet address using new Account-based approach
-    tweet_id = send_post(account, f'My wallet is {eth_address}')
-    try:
-        rest_id = tweet_id['data']['create_tweet']['tweet_results']['result']['rest_id']
-        print(f"Wallet announcement tweet: https://x.com/user/status/{rest_id}")
-    except KeyError:
-        print(f"Couldn't tweet wallet announcement: {tweet_id}")
+    tweet_id = send_post_API(account, f'My wallet is {eth_address}')
+    print(f"Wallet announcement tweet: https://x.com/user/status/{tweet_id}")
+    # try:
+    #     rest_id = tweet_id['data']['create_tweet']['tweet_results']['result']['rest_id']
+    #     print(f"Wallet announcement tweet: https://x.com/user/status/{rest_id}")
+    # except KeyError:
+    #     print(f"Couldn't tweet wallet announcement: {tweet_id}")
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")
