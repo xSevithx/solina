@@ -93,7 +93,7 @@ def main():
     print(f"generated agent exclusively-owned wallet: {eth_address}")
     
     # Announce wallet address using new Account-based approach
-    tweet_id = send_post_API(account, f'My wallet is {eth_address}')
+    tweet_id = send_post_API(auth, f'My wallet is {eth_address}')
     print(f"Wallet announcement tweet: https://x.com/user/status/{tweet_id}")
     # try:
     #     rest_id = tweet_id['data']['create_tweet']['tweet_results']['result']['rest_id']
