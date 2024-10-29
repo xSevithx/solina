@@ -83,13 +83,10 @@ def main():
     x_access_token = os.environ.get("X_ACCESS_TOKEN")
     x_access_token_secret = os.environ.get("X_ACCESS_TOKEN_SECRET")
     eth_mainnet_rpc_url = os.environ.get("ETH_MAINNET_RPC_URL")
-    # auth_tokens_raw = os.environ.get("X_AUTH_TOKENS")
-    # auth_tokens = json.loads(auth_tokens_raw)
-    auth_tokens = {
-        "auth_token": "479a30646d74c24206e35fb7128fe6bd96ed1cfd",
-        "ct0": "15de94ca52d3a6d638d8b5d793ba31312a8c6905cf128593336ec436b5368bbfb8362b071070b16aed6bab943c3576819c59459b5859878dd35a98a2f36d9a2603991e2ca57d44579b09ddccd75639f2"
-    }
+    auth_tokens_raw = os.environ.get("X_AUTH_TOKENS")
+    auth_tokens = json.loads(auth_tokens_raw)
     account = Account(cookies=auth_tokens)
+    auth = OAuth1(x_consumer_key, x_consumer_secret, x_access_token, x_access_token_secret)
 
     # Generate Ethereum account
     private_key_hex, eth_address = generate_eth_account()

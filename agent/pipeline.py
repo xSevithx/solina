@@ -16,7 +16,7 @@ from engines.long_term_mem import (
 )
 from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
-from engines.post_sender import send_post
+from engines.post_sender import send_post, send_post_API
 from engines.wallet_send import transfer_eth, wallet_address_in_post, get_wallet_balance
 from engines.follow_user import follow_by_username, decide_to_follow_users
 from models import Post, User
@@ -26,6 +26,7 @@ from twitter.account import Account
 def run_pipeline(
     db: Session,
     account: Account,
+    auth,
     private_key_hex: str,
     eth_mainnet_rpc_url: str,
     llm_api_key: str,
@@ -176,24 +177,28 @@ def run_pipeline(
 
     # THIS IS WHERE YOU WOULD INCLUDE THE POST_SENDER.PY FUNCTION TO SEND THE NEW POST TO TWITTER ETC
     if significance_score >= 1: # Only Bangers! lol
-        res = send_post(account, new_post_content)
-        rest_id = (res.get('data', {})
-                    .get('create_tweet', {})
-                    .get('tweet_results', {})
-                    .get('result', {})
-                    .get('rest_id'))
+        res = send_post_API(auth, new_post_content)
+        print(f"Posted API with tweet_id: {res}")
 
-        if rest_id is not None:
-            print(f"Posted with tweet_id: {rest_id}")
-            new_db_post = Post(
-                content=new_post_content,
-                user_id=ai_user.id,
-                username=ai_user.username,
-                type="text",
-                tweet_id=rest_id,
-            )
-            db.add(new_db_post)
-            db.commit()
+        if res == None:
+            res = send_post(account, new_post_content)
+            rest_id = (res.get('data', {})
+                        .get('create_tweet', {})
+                        .get('tweet_results', {})
+                        .get('result', {})
+                        .get('rest_id'))
+
+            if rest_id is not None:
+                print(f"Posted with tweet_id: {rest_id}")
+                new_db_post = Post(
+                    content=new_post_content,
+                    user_id=ai_user.id,
+                    username=ai_user.username,
+                    type="text",
+                    tweet_id=rest_id,
+                )
+                db.add(new_db_post)
+                db.commit()
 
     print(
         f"New post generated with significance score {significance_score}: {new_post_content}"
