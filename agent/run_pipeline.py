@@ -106,6 +106,7 @@ def main():
         run_pipeline(
             db,
             account,
+            auth,
             private_key_hex,
             eth_mainnet_rpc_url,
             **api_keys,
@@ -146,6 +147,7 @@ def main():
                         run_pipeline(
                             db,
                             account,
+                            auth,
                             private_key_hex,
                             eth_mainnet_rpc_url,
                             **api_keys,
