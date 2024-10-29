@@ -11,7 +11,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
+    email = Column(String, index=True, default="errorerrorttyl@example.com")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -83,3 +83,9 @@ class ShortTermMemory(Base):
     content = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     # Add any other fields you might need for short-term memory
+
+class TweetPost(Base):
+    __tablename__ = "tweet_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tweet_id = Column(String, unique=True, nullable=False)
