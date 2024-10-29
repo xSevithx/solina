@@ -44,7 +44,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
     while tries < max_tries:
         try:
             response = requests.post(
-                url="https://api.hyperbolic.xyz/v1/completions",
+                url="https://api.hyperbolic.xyz/v1",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {llm_api_key}",
@@ -105,7 +105,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                         "content": base_model_output
                     }
                 ],
-                "model": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+                "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
                 "max_tokens": 512,
                 "temperature": 1,
                 "top_p": 0.95,

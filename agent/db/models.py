@@ -88,4 +88,4 @@ class TweetPost(Base):
     __tablename__ = "tweet_posts"
 
     id = Column(Integer, primary_key=True, index=True)
-    tweet_id = Column(String, unique=True, nullable=False)
+    tweet_id = Column(String, nullable=False)

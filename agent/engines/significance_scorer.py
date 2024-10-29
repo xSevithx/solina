@@ -38,7 +38,7 @@ def score_significance(memory: str, llm_api_key: str) -> int:
                             "content": "Respond only with the score you would give for the given memory."
                         }
                     ],
-                    "model": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+                    "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
                     "temperature": 1,
                     "top_p": 0.95,
                     "top_k": 40,

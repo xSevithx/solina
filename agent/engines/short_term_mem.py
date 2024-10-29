@@ -54,7 +54,7 @@ def generate_short_term_memory(posts: List[Dict], external_context: List[str], l
                         "content": "Respond only with your internal monologue based on the given context."
                     }
                 ],
-                "model": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+                "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
                 "max_tokens": 512,
                 "temperature": 1,
                 "top_p": 0.95,

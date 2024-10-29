@@ -133,7 +133,7 @@ def wallet_address_in_post(posts, private_key, eth_mainnet_rpc_url: str,llm_api_
                     "content": "Respond only with the wallet address(es) and amount(s) you would like to send to."
                 }
             ],
-            "model": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+            "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
             "presence_penalty": 0,
             "temperature": 1,
             "top_p": 0.95,
