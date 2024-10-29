@@ -117,7 +117,7 @@ def run_pipeline(
         tries = 0
         max_tries = 2
         while tries < max_tries:
-            decision_data = decide_to_follow_users(notif_context, openrouter_api_key)
+            decision_data = decide_to_follow_users(db, notif_context, openrouter_api_key)
             print(f"Decisions from Posts: {decision_data}")
             try:
                 decisions = json.loads(decision_data)

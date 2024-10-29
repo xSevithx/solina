@@ -2,9 +2,9 @@ import requests
 import re
 from twitter.account import Account
 from twitter.scraper import Scraper
+from models import User
 
-
-def decide_to_follow_users(posts, openrouter_api_key: str):
+def decide_to_follow_users(db, posts, openrouter_api_key: str):
     """
     Detects Twitter usernames from a list of posts and decides whether to follow them, assigning a score.
 
@@ -28,6 +28,19 @@ def decide_to_follow_users(posts, openrouter_api_key: str):
 
     # Remove duplicates
     twitter_usernames = list(set(twitter_usernames))
+
+    # Query existing usernames from the database
+    existing_usernames = db.query(User.username).filter(User.username.in_(twitter_usernames)).all()
+    existing_usernames = [username[0] for username in existing_usernames]  # Convert list of tuples to list of strings
+
+    # Remove usernames that already exist in the database
+    twitter_usernames = [username for username in twitter_usernames if username not in existing_usernames]
+
+    # Add new usernames to the database
+    for username in twitter_usernames:
+        new_user = User(username=username)
+        db.add(new_user)
+    db.commit()
 
     # Prepare the prompt
     prompt = f"""
