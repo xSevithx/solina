@@ -232,7 +232,6 @@ def format_conversation_for_llm(data, tweet_id):
     
     return "\n".join(output)
 
-
 def find_all_conversations(data):
     """Find and format all conversations in the data."""
     tweets = data['globalObjects']['tweets']
@@ -252,7 +251,8 @@ def find_all_conversations(data):
             processed_roots.add(root_id)
             conversation = format_conversation_for_llm(data, tweet_id)
             if conversation != "No conversation found.":
-                conversations.append(conversation)
+                # print(f"Reply Tweet ID: {tweet_id}")
+                conversations.append((conversation, tweet_id))
 
     if not conversations:
         return "No conversations found."
@@ -270,12 +270,13 @@ def get_timeline(account: Account) -> List[str]:
     tweets_info = parse_tweet_data(timeline[0])
     filtered_timeline = []
     for t in tweets_info:
-        filtered_timeline.append(f'New post on my timeline from @{t["Author Information"]["username"]}: {t["Tweet Information"]["text"]}\n')
+        timeline_tweet_text = f'New post on my timeline from @{t["Author Information"]["username"]}: {t["Tweet Information"]["text"]}\n'
+        filtered_timeline.append((timeline_tweet_text, t["Tweet ID"]))
         # print(f'Tweet ID: {t["Tweet ID"]}, on my timeline: {t["Author Information"]["username"]} said {t["Tweet Information"]["text"]}\n')
     return filtered_timeline
 
 
-def fetch_notification_context(account: Account, tweet_id_list) -> str:
+def fetch_notification_context(account: Account) -> str:
     """Fetch notification context using the new Account-based approach."""
     context = []
     

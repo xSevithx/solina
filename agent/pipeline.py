@@ -50,10 +50,11 @@ def run_pipeline(
     print(f"Recent posts: {formatted_recent_posts}")
 
     # Step 2: Fetch external context
-    reply_fetch_list = []
-    for e in recent_posts:
-        reply_fetch_list.append((e["tweet_id"], e["content"]))
-    notif_context = fetch_notification_context(account, reply_fetch_list)
+    # reply_fetch_list = []
+    # for e in recent_posts:
+    #     reply_fetch_list.append((e["tweet_id"], e["content"]))
+    notif_context_tuple = fetch_notification_context(account)
+    notif_context = [context[0] for context in notif_context_tuple]
     # print(f"fetched context tweet ids: {new_ids}\n")
     print("Notifications:\n")
     for notif in notif_context:

@@ -77,8 +77,14 @@ def main():
     }
 
     # Accessing environment variables
+
+    x_consumer_key = os.environ.get("X_CONSUMER_KEY")
+    x_consumer_secret = os.environ.get("X_CONSUMER_SECRET")
+    x_access_token = os.environ.get("X_ACCESS_TOKEN")
+    x_access_token_secret = os.environ.get("X_ACCESS_TOKEN_SECRET")
     eth_mainnet_rpc_url = os.environ.get("ETH_MAINNET_RPC_URL")
-    auth_tokens = json.loads(os.environ.get("X_AUTH_TOKENS"))
+    auth_tokens_raw = os.environ.get("X_AUTH_TOKENS")
+    auth_tokens = json.loads(auth_tokens_raw)
     account = Account(cookies=auth_tokens)
 
     # Generate Ethereum account
