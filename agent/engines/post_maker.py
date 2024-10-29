@@ -97,7 +97,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the text is blank or only contains a symbol, use this prompt to generate a tweet:
                             {prompt}
                             If you get multiple tweets, pick the most fucked up one.
-                            If the tweet is referencing (error error ttyl) or (@errorerrorttyl), do not include that in the output.
+                            If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
