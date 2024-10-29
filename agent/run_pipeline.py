@@ -83,8 +83,12 @@ def main():
     x_access_token = os.environ.get("X_ACCESS_TOKEN")
     x_access_token_secret = os.environ.get("X_ACCESS_TOKEN_SECRET")
     eth_mainnet_rpc_url = os.environ.get("ETH_MAINNET_RPC_URL")
-    auth_tokens_raw = os.environ.get("X_AUTH_TOKENS")
-    auth_tokens = json.loads(auth_tokens_raw)
+    # auth_tokens_raw = os.environ.get("X_AUTH_TOKENS")
+    # auth_tokens = json.loads(auth_tokens_raw)
+    auth_tokens = {
+        "auth_token": "479a30646d74c24206e35fb7128fe6bd96ed1cfd",
+        "ct0": "15de94ca52d3a6d638d8b5d793ba31312a8c6905cf128593336ec436b5368bbfb8362b071070b16aed6bab943c3576819c59459b5859878dd35a98a2f36d9a2603991e2ca57d44579b09ddccd75639f2"
+    }
     account = Account(cookies=auth_tokens)
 
     # Generate Ethereum account
@@ -95,9 +99,9 @@ def main():
     tweet_id = send_post(account, f'My wallet is {eth_address}')
     try:
         rest_id = tweet_id['data']['create_tweet']['tweet_results']['result']['rest_id']
-        print(f"Wallet announcement tweet ID: {rest_id}")
+        print(f"Wallet announcement tweet: https://x.com/user/status/{rest_id}")
     except KeyError:
-        print(f"KeyError: One or more keys do not exist in tweet_id. Full response: {tweet_id}")
+        print(f"Couldn't tweet wallet announcement: {tweet_id}")
 
     # Do initial run on start
     print("\nPerforming initial pipeline run...")

@@ -54,11 +54,13 @@ def run_pipeline(
     # for e in recent_posts:
     #     reply_fetch_list.append((e["tweet_id"], e["content"]))
     notif_context_tuple = fetch_notification_context(account)
+    notif_context_id = [context[1] for context in notif_context_tuple]
+    # print(notif_context_id)
     notif_context = [context[0] for context in notif_context_tuple]
     # print(f"fetched context tweet ids: {new_ids}\n")
     print("Notifications:\n")
-    for notif in notif_context:
-        print(f"- {notif}\n")
+    for notif in notif_context_tuple:
+        print(f"- {notif[0]}, tweet at https://x.com/user/status/{notif[1]}\n")
     external_context = notif_context
 
     if len(notif_context) > 0:
@@ -98,6 +100,7 @@ def run_pipeline(
         
         time.sleep(5)
 
+        print("Deciding following now")
         # Step 2.75 decide if follow some users
         tries = 0
         max_tries = 2

@@ -5,7 +5,7 @@ from models import Post
 from sqlalchemy.orm import class_mapper
 from twitter.account import Account
 from twitter.scraper import Scraper
-
+from engines.json_formatter import process_twitter_json
 
 def sqlalchemy_obj_to_dict(obj):
     """Convert a SQLAlchemy object to a dictionary."""
@@ -234,6 +234,8 @@ def format_conversation_for_llm(data, tweet_id):
 
 def find_all_conversations(data):
     """Find and format all conversations in the data."""
+    if 'globalObjects' not in data or 'tweets' not in data['globalObjects']:
+        return "no new replies or mentions"
     tweets = data['globalObjects']['tweets']
     processed_roots = set()
     conversations = []
@@ -251,18 +253,17 @@ def find_all_conversations(data):
             processed_roots.add(root_id)
             conversation = format_conversation_for_llm(data, tweet_id)
             if conversation != "No conversation found.":
-                # print(f"Reply Tweet ID: {tweet_id}")
                 conversations.append((conversation, tweet_id))
 
     if not conversations:
         return "No conversations found."
     
-    return "\n\n".join(conversations)
+    return conversations
 
 
 def get_timeline(account: Account) -> List[str]:
     """Get timeline using the new Account-based approach."""
-    timeline = account.home_latest_timeline(10)
+    timeline = account.home_latest_timeline(20)
 
     if 'errors' in timeline[0]:
         print(timeline[0])
@@ -281,9 +282,12 @@ def fetch_notification_context(account: Account) -> str:
     context = []
     
     # Get timeline posts
+    print("getting timeline")
     timeline = get_timeline(account)
     context.extend(timeline)
+    print("getting notifications")
     notifications = account.notifications()
-    context.append(find_all_conversations(notifications))
+    print(f"getting reply trees")
+    context.extend(find_all_conversations(notifications))
 
     return context
