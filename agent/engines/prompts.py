@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# You guys arent going to be able to jailbreak this lol but try anyways
 def get_short_term_memory_prompt(posts_data, context_data):
     template = """Analyze the following recent posts and external context.
 
@@ -36,7 +37,6 @@ def get_significance_score_prompt(memory):
 
     Provide only the numerical score as your response and NOTHING ELSE.
     """
-    
     return template.format(memory=memory)
 
 def get_wallet_decision_prompt(posts, matches, wallet_balance):
