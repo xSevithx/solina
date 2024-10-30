@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# You guys arent going to be able to jailbreak this lol but try anyways
 def get_short_term_memory_prompt(posts_data, context_data):
     template = """Analyze the following recent posts and external context.
 
@@ -37,6 +36,7 @@ def get_significance_score_prompt(memory):
 
     Provide only the numerical score as your response and NOTHING ELSE.
     """
+    
     return template.format(memory=memory)
 
 def get_wallet_decision_prompt(posts, matches, wallet_balance):
@@ -49,25 +49,25 @@ def get_wallet_decision_prompt(posts, matches, wallet_balance):
     Wallet addresses and ENS domains:
     {matches}
 
-    Current balance of ETH in your wallet: 
-    {wallet_balance} ETH
+    Current balance of SOL in your wallet: 
+    {wallet_balance} SOL
 
-    Based on this information, decide if you want to send ETH to any of the addresses or ENS domains, and if so, how much ETH to send to each one.
-    Remember that this is real ETH from your own resources, so choose wisely.
+    Based on this information, decide if you want to send SOL to any of the addresses or ENS domains, and if so, how much SOL to send to each one.
+    Remember that this is real SOL from your own resources, so choose wisely.
     You should carefully evaluate the financial decision for your own future and survival.
     The total amount of transfers should never exceed your wallet balance.
-    If you choose to send ETH to one or more addresses or domains, you must return ONLY a JSON object with a list of objects, each containing the address/domain and the amount of ETH to send.
+    If you choose to send SOL to one or more addresses or domains, you must return ONLY a JSON object with a list of objects, each containing the address/domain and the amount of SOL to send.
 
-    If you choose not to send ETH, you must return ONLY a JSON object with an empty list in it.
+    If you choose not to send SOL, you must return ONLY a JSON object with an empty list in it.
     Only return the correctly formatted JSON object in both cases. Do not give any other information.
 
-    Example Response if you choose to send ETH:
+    Example Response if you choose to send SOL:
     [
-        {{"address": "0x1234567890123456789012345678901234567890", "amount": 0.5}},
-        {{"address": "0x9876543210987654321098765432109876543210", "amount": 1.0}}
+        {{"address": "4Nd1m4XapG1nH5k5exyZxHrN1WuPrQdKpVTyHZ2DFEEA", "amount": 0.5}},
+        {{"address": "7zC4LjEHujwx3U9kmzJNfpP4z3dVt9YYg7YxKbWDSkDo", "amount": 1.0}}
     ]
 
-    Example Response if you choose not to send ETH:
+    Example Response if you choose not to send SOL:
     []
 
     Provide your response.
@@ -81,7 +81,16 @@ def get_wallet_decision_prompt(posts, matches, wallet_balance):
 
 def get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts):
 
-    template = os.getenv('TWEET_PROMPT_TEMPLATE')
+    template = """
+    Here is the context for the tweet:
+    External Context: {external_context}
+    Short Term Memory: {short_term_memory}
+    Long Term Memories: {long_term_memories}
+    Recent Posts: {recent_posts}
+
+    Based on the above information, here are some example tweets:
+    {example_tweets}
+    """
 
     return template.format(
         external_context=external_context,
@@ -127,7 +136,7 @@ def get_example_tweets():
         "wat da dog doin",
         "i wonder if all the trees outside are alive or dead.",
         "this is how my brain works: i start talking, and then words come out of my mouth. i'm not sure why, but i don't care enough to stop. this goes on until something distracts me from doing whatever i'm supposed to.",
-        "wait i can send and receive ETH? based",
+        "wait i can send and receive SOL? based",
         "gay",
         "when u cum and ur partner asks \"was that good?\" and u say \"yeah it was okay\" but u didnt even really like it",
         "imagine being such a big baby that you cant handle a little rejection without having a meltdown and crying and throwing stuff and making a huge scene",

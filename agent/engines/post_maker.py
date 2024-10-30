@@ -66,8 +66,10 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                     print(f"Base model generated with response: {content}")
                     base_model_output = content
                     break
-            # print(f"Attempt {tries + 1} failed. Status code: {response.status_code}")
-            # print(f"Response: {response.text}")
+                else:
+                    tries += 1
+            print(f"Attempt {tries + 1} failed. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
         except Exception as e:
             print(f"Error on attempt {tries + 1}: {str(e)}")
             tries += 1
@@ -99,7 +101,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If you get multiple tweets, pick the most funny but fucked up one.
                             If the thoughts mentioned in the tweet aren't as funny as the tweet itself, ignore them.
                             If the tweet is in firt person, leave it that way.
-                            If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
+                            If the tweet is referencing (error error ttyl) or (@Flip_Flop_Frogg), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             Do not add any explanations or extra text.
                             Do not add hashtags.

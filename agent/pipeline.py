@@ -17,7 +17,7 @@ from engines.long_term_mem import (
 from engines.post_maker import generate_post
 from engines.significance_scorer import score_significance
 from engines.post_sender import send_post, send_post_API
-from engines.wallet_send import transfer_eth, wallet_address_in_post, get_wallet_balance
+from engines.wallet_send import transfer_sol, wallet_address_in_post, get_wallet_balance
 from engines.follow_user import follow_by_username, decide_to_follow_users
 from models import Post, User, TweetPost
 from twitter.account import Account
@@ -28,7 +28,7 @@ def run_pipeline(
     account: Account,
     auth,
     private_key_hex: str,
-    eth_mainnet_rpc_url: str,
+    solana_mainnet_rpc_url: str,
     llm_api_key: str,
     openrouter_api_key: str,
     openai_api_key: str,
@@ -39,8 +39,8 @@ def run_pipeline(
     Args:
         db (Session): Database session
         account (Account): Twitter/X API account instance
-        private_key_hex (str): Ethereum wallet private key
-        eth_mainnet_rpc_url (str): Ethereum RPC URL
+        private_key_hex (str): Solana wallet private key
+        solana_mainnet_rpc_url (str): Solana RPC URL
         llm_api_key (str): API key for LLM service
         openrouter_api_key (str): API key for OpenRouter
         openai_api_key (str): API key for OpenAI
@@ -77,15 +77,15 @@ def run_pipeline(
 
     if len(notif_context) > 0:
         # Step 2.5 check wallet addresses in posts
-        balance_ether = get_wallet_balance(private_key_hex, eth_mainnet_rpc_url)
-        print(f"Agent wallet balance is {balance_ether} ETH now.\n")
+        balance_sol = get_wallet_balance(private_key_hex, solana_mainnet_rpc_url)
+        print(f"Agent wallet balance is {balance_sol} SOL now.\n")
         
-        if balance_ether > 0.3:
+        if balance_sol > 0.3:
             tries = 0
             max_tries = 2
             while tries < max_tries:
                 wallet_data = wallet_address_in_post(
-                    notif_context, private_key_hex, eth_mainnet_rpc_url, llm_api_key
+                    notif_context, private_key_hex, solana_mainnet_rpc_url, llm_api_key
                 )
                 print(f"Wallet addresses and amounts chosen from Posts: {wallet_data}")
                 try:
@@ -95,8 +95,8 @@ def run_pipeline(
                         for wallet in wallets:
                             address = wallet["address"]
                             amount = wallet["amount"]
-                            transfer_eth(
-                                private_key_hex, eth_mainnet_rpc_url, address, amount
+                            transfer_sol(
+                                private_key_hex, solana_mainnet_rpc_url, address, amount
                             )
                         break
                     else:
@@ -180,9 +180,9 @@ def run_pipeline(
         store_memory(db, new_post_content, new_post_embedding, significance_score)
 
     # Step 9: Save the new post to the database
-    ai_user = db.query(User).filter(User.username == "tee_hee_he").first()
+    ai_user = db.query(User).filter(User.username == "Flip_Flop_Frogg").first()
     if not ai_user:
-        ai_user = User(username="tee_hee_he", email="tee_hee_he@example.com")
+        ai_user = User(username="Flip_Flop_Frogg", email="Flip_Flop_Frogg@example.com")
         db.add(ai_user)
         db.commit()
 
