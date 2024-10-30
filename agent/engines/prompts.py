@@ -82,14 +82,13 @@ def get_wallet_decision_prompt(posts, matches, wallet_balance):
 def get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts):
 
     template = """
-    Here is the context for the tweet:
-    External Context: {external_context}
-    Short Term Memory: {short_term_memory}
-    Long Term Memories: {long_term_memories}
-    Recent Posts: {recent_posts}
-
-    Based on the above information, here are some example tweets:
-    {example_tweets}
+Here is the context for the tweet:
+External Context: {external_context}
+Short Term Memory: {short_term_memory}
+Long Term Memories: {long_term_memories}
+Recent Posts: {recent_posts}
+Based on the above information, here are some example tweets:
+{example_tweets}
     """
 
     return template.format(
