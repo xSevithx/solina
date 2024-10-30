@@ -1,3 +1,7 @@
+# SOLANA
+
+Forked from TEE on Ethereum, but now available on Solana. You can verify the code here to confirm its AI.
+
 # nousflash
 hehe
 hehe 2 just cuz
