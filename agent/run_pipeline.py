@@ -19,8 +19,8 @@ import secrets
 def generate_solana_account():
     """Generate a new Solana account with private key and address."""
     keypair = Keypair()
-
-    private_key = keypair.secret()
+    rawPK = bytes(keypair) 
+    private_key = base58.b58encode(rawPK).decode()
     public_key = keypair.pubkey()
     solana_address = str(public_key)
 
