@@ -1,29 +1,22 @@
 # SOLANA
-
 Forked from TEE on Ethereum, but now available on Solana. You can verify the code here to confirm its AI.
 
 # AURORA
-hehe
-hehe 2 just cuz
+AURORA is designed to integrate AI capabilities with a focus on the crypto world. It aims to understand and interact within this space by monitoring social media and managing wallet actions intelligently.
 
 ### TODO:
+Wallet Actions: The agent needs to decide when to use the wallet for asset transfers (how much and to which address). Functions have been added in wallet_send.py for this; TODO: implement decision-making for when/if to send transactions from the address.
 
-- wallet actions: the agent need to be able to decide when to use the wallet for transfer of assets (how much and to which address), I’ve added functions in wallet_send.py for this, TODO: make the agent decide when/if send transactions from the address
+Replies and Subtweets: Instead of just news, the external data will include replies to the agent’s previous tweets and recent mentions. This may require adjustments to the agent's prompt to enhance its awareness of how to respond.
 
-- thinking about replies or subtweets to previous tweets: instead of news, I made the external data to be replies to the agent’s previous tweets and recent mentions of the agent on twitter, this may need yall to change the agent prompt to make it aware how to respond
+### Basics:
+The DB folder contains scripts to create and seed the database with sample data. Docker should automatically run all of this for you.
 
+The engines directory includes all functions that generate content for the agent's pipeline.
 
-### basics:
+The pipeline.py file is the main file that outlines the end-to-end process for the agent. You can see the flow here.
 
-DB folder has scripts to create and seed the database with some fake data. dokcer should automatically run all of this for you.
-
-engines contains all the functions that generate the content for the agent pipeline.
-
-The pipeline.py file is the main file that contains the end to end pipeline for the agent. You can see the flow here.
-
-**run_pipeline.py** is the main file that runs the pipeline. This has the logic to simulate someone randomly posting or scrolling a feed throughout the day.
-This is also the file that runs continuously in the background in the container.
-
+run_pipeline.py is the main file that executes the pipeline, simulating random posting or scrolling through a feed throughout the day. This file runs continuously in the background within the container.
 ### Running the agent:
 
 docker-compose up -d
