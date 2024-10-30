@@ -13,7 +13,7 @@ def get_wallet_balance(private_key_hex, solana_rpc_url="https://api.mainnet-beta
     wallet = Keypair.from_base58_string(private_key_hex)
     public_key = wallet.pubkey()
     # Retrieve and print the balance of the account in SOL
-    balance_lamports = client.get_balance(public_key)["result"]["value"]
+    balance_lamports = client.get_balance(public_key).value
     balance_sol = balance_lamports / 1_000_000_000  # 1 SOL = 1,000,000,000 Lamports
 
     return balance_sol
