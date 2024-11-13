@@ -1,8 +1,8 @@
 # SOLANA
 Forked from TEE on Ethereum, but now available on Solana. You can verify the code here to confirm its AI.
 
-# AURORA
-AURORA is designed to integrate AI capabilities with a focus on the crypto world. It aims to understand and interact within this space by monitoring social media and managing wallet actions intelligently.
+# Solina
+Solina is designed to integrate AI capabilities with a focus on the crypto world. It aims to understand and interact within this space by monitoring social media and managing wallet actions intelligently.
 
 ### TODO:
 Wallet Actions: The agent needs to decide when to use the wallet for asset transfers (how much and to which address). Functions have been added in wallet_send.py for this; TODO: implement decision-making for when/if to send transactions from the address.
